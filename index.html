@@ -860,6 +860,10 @@ table.bkc{border-collapse:separate;border-spacing:0;width:100%;min-width:1100px}
 .ij-ap{display:grid;justify-items:center;gap:6px;min-width:130px}
 .ij-ap span{font-weight:700;color:var(--ai)}
 .ij-ap small{color:var(--muted);font-size:12px;text-align:center}
+/* まとめて記入：残っている項目（v0.21.1） */
+.mt-msg-h{display:block;font-size:12px;letter-spacing:.06em}
+.mt-left{display:block;color:var(--ink);font-size:14px;line-height:1.6}
+.mt-left b{color:var(--shu)}
 </style>
 
 
@@ -929,7 +933,7 @@ img.rail-mark.qms-icon{background:transparent;object-fit:contain;padding:0}
 <div class="busy" id="busy" hidden><span>処理中…</span></div>
 
 <script>
-window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.21.0" };
+window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.21.1" };
 var qmsToken = null, qmsStarted = false;
 // IDトークンの中身はUTF-8（表示用だけに使う。だれかの判定はGAS側でトークンを確かめて得たメールだけを使う）
 function qmsDecode_(str){
@@ -1513,19 +1517,20 @@ function mtEditable(mc) { return !!S.msel[mc.no]; }
 function mtCheck(mc) {
   const s = S.msel[mc.no]; if (!s) return { left: 0, why: '' };
   let left = 0, why = '';
+  const names = [], short = it => it.name.replace(/（.*$/, '');
   S.multi.items.forEach(it0 => {
     const it = mtItem(it0, mc), mk = s.marks[it.no];
     if (isDoItem(it)) return;
-    if (!mk) { left++; return; }
+    if (!mk) { left++; names.push(short(it)); return; }
     if (isNumItem(it) && mk !== '／' && mk !== '━') {
       const j = judgeNum(it, s.nums[it.no]);
-      if (!j) left++;
-      else if (j === 'out' && mk === 'レ') { left++; why = why || '範囲外の数値にレがついています'; }
+      if (!j) { left++; names.push(short(it) + 'の数値'); }
+      else if (j === 'out' && mk === 'レ') { left++; names.push(short(it) + '（範囲外なのにレ）'); why = why || '範囲外の数値にレがついています'; }
     }
   });
   const bad = Object.values(s.marks).some(v => v === '△' || v === '×');
   if (!left && bad && !String(s.note).trim()) why = '△・×があるので、備考に内容を書いてください';
-  return { left: left, why: why };
+  return { left: left, why: why, names: names };
 }
 function mtReady(mc) { const c = mtCheck(mc); return mtEditable(mc) && !c.left && !c.why; }
 function mtChip(mc) {
@@ -1575,7 +1580,14 @@ function mtHead(mc) {
 function mtBar() {
   const d = S.multi, todo = d.machines.filter(mtEditable), ready = todo.filter(mtReady), not = todo.filter(mc => !mtReady(mc));
   if (!todo.length) return '<span class="mt-msg">' + esc(jpDate(d.date)) + ' の担当' + d.machines.length + '台はすべて提出済みです。</span>';
-  return '<span class="mt-msg">' + (not.length ? '入力がまだの機械：<b>' + not.map(mc => esc(mc.label)).join('、') + '</b>' : '全台の入力が終わりました') + '</span>' +
+  // 残っている項目の名前まで出す（v0.21.1、ユーザー指示）。全部まだの機械は「まだ入力していません」
+  const why = mc => {
+    const c = mtCheck(mc), all = S.multi.items.filter(it => !isDoItem(mtItem(it, mc)) && !mtItem(it, mc).fixed).length;
+    if (!c.left) return c.why;
+    if (c.left >= all) return 'まだ入力していません';
+    return 'あと' + c.left + '項目（' + c.names.slice(0, 4).join('・') + (c.names.length > 4 ? ' ほか' + (c.names.length - 4) + 'つ' : '') + '）';
+  };
+  return '<span class="mt-msg">' + (not.length ? '<span class="mt-msg-h">入力がまだの機械</span>' + not.map(mc => '<span class="mt-left"><b>' + esc(mc.label) + '</b>：' + esc(why(mc)) + '</span>').join('') : '全台の入力が終わりました') + '</span>' +
     '<button type="button" class="btn primary" id="mtSubmit"' + (ready.length ? '' : ' disabled') + '>' + (not.length && ready.length ? '入力が終わった ' + ready.length + '台を提出' : 'まとめて提出（' + ready.length + '台）') + '</button>';
 }
 function renderMulti() {
