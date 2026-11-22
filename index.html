@@ -833,6 +833,33 @@ table.bkc{border-collapse:separate;border-spacing:0;width:100%;min-width:1100px}
 .ask p{margin:0 0 20px;font-size:16px;line-height:1.75;white-space:pre-line;font-weight:700}
 .ask-btns{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
 .ask-btns .btn{min-height:46px;padding:0 20px}
+/* 設備異常記録台帳（v0.21.0） */
+.ij-x .ij-x-b{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap}
+.ij-proc h3{margin:0 0 2px;font-family:var(--f-display);font-size:19px}
+.ij-proc .ij-code{color:var(--muted);font-size:13px;margin-bottom:10px}
+.ij-proc ol{margin:0 0 18px;padding-left:1.4em;display:grid;gap:6px;font-size:15px;line-height:1.7}
+.ij-auto{display:inline-block;font-size:11px;color:var(--ai);background:var(--ai-soft);padding:1px 6px;border-radius:2px;margin-left:6px;vertical-align:1px}
+.ij-gk{display:flex;gap:8px;flex-wrap:wrap}
+.ij-gk button{min-width:100px;min-height:52px;font:inherit;font-weight:700;font-size:18px;border:1.5px solid var(--line);background:var(--surface);border-radius:4px;cursor:pointer;line-height:1.15}
+.ij-gk button small{display:block;font-size:11px;font-weight:400}
+.ij-gk button.go[aria-pressed="true"]{background:var(--ok);border-color:var(--ok);color:#fff}
+.ij-gk button.no[aria-pressed="true"]{background:var(--shu);border-color:var(--shu);color:#fff}
+.ij-gk button:focus-visible{outline:3px solid var(--ai);outline-offset:2px}
+.ij-rule{font-size:13px;color:var(--muted);margin-top:6px}
+.ij-rule.ng{color:var(--shu);font-weight:700}
+.ij-tip{margin:0;padding:12px 14px;font-size:13px;line-height:1.7}
+.ij-tbl tbody tr{cursor:pointer}
+.ij-tbl tbody tr:hover{background:var(--ai-soft)}
+.ij-tbl td{vertical-align:top}
+.ij-j{font-size:16px}.ij-j.go{color:var(--ok)}.ij-j.no{color:var(--shu)}
+.ij-re{display:block;font-size:12px;color:var(--ok)}.ij-re.ng{color:var(--shu);font-weight:700}
+.ij-empty{color:var(--muted);text-align:center;padding:24px!important;cursor:default}
+.ij-aps{background:var(--surface);border:1px solid var(--line);padding:16px 18px;margin-top:20px;display:grid;gap:12px}
+.ij-aps h2{margin:0;font-size:17px}
+.ij-ap-row{display:flex;gap:28px;flex-wrap:wrap}
+.ij-ap{display:grid;justify-items:center;gap:6px;min-width:130px}
+.ij-ap span{font-weight:700;color:var(--ai)}
+.ij-ap small{color:var(--muted);font-size:12px;text-align:center}
 </style>
 
 
@@ -902,7 +929,7 @@ img.rail-mark.qms-icon{background:transparent;object-fit:contain;padding:0}
 <div class="busy" id="busy" hidden><span>処理中…</span></div>
 
 <script>
-window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.20.1" };
+window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.21.0" };
 var qmsToken = null, qmsStarted = false;
 // IDトークンの中身はUTF-8（表示用だけに使う。だれかの判定はGAS側でトークンを確かめて得たメールだけを使う）
 function qmsDecode_(str){
@@ -1149,9 +1176,9 @@ function renderHome() {
   const b = S.boot; if (!b) return;
   const todos = b.todos;
   // 列の振り分け：記入（記入・改善計画書・差し戻し）／確認（日ごとの確認・記録の確認・参加者の押印）／承認
-  const colOf = t => /^(entry|entryMulti|kaizen|returned)$/.test(t.kind) ? 'entry' : /^(confirm|bulkConfirm|participate)$/.test(t.kind) ? 'check' : 'approve';
-  const TAG = { entryMulti: ['e', '記入'], entry: ['e', '記入'], kaizen: ['e', '記入'], returned: ['b', '差し戻し'], confirm: ['c', '確認'], bulkConfirm: ['c', '確認'], participate: ['c', '押印'], approve: ['c', '承認'], bulkApprove: ['c', '承認'] };
-  const BTN = { entryMulti: 'まとめて記入', entry: '記入する', kaizen: '記入する', returned: '直す', confirm: '確認へ', bulkConfirm: 'まとめて確認へ', participate: '押印へ', approve: '承認へ', bulkApprove: 'まとめて承認へ' };
+  const colOf = t => /^(entry|entryMulti|kaizen|ijou|returned)$/.test(t.kind) ? 'entry' : /^(confirm|bulkConfirm|participate|detail)$/.test(t.kind) ? 'check' : 'approve';
+  const TAG = { entryMulti: ['e', '記入'], entry: ['e', '記入'], kaizen: ['e', '記入'], ijou: ['e', '記入'], detail: ['c', '記入'], ijouYear: ['c', '承認'], returned: ['b', '差し戻し'], confirm: ['c', '確認'], bulkConfirm: ['c', '確認'], participate: ['c', '押印'], approve: ['c', '承認'], bulkApprove: ['c', '承認'] };
+  const BTN = { entryMulti: 'まとめて記入', entry: '記入する', kaizen: '記入する', ijou: '記入する', detail: '入れる', ijouYear: '台帳を見る', returned: '直す', confirm: '確認へ', bulkConfirm: 'まとめて確認へ', participate: '押印へ', approve: '承認へ', bulkApprove: 'まとめて承認へ' };
   const list = { entry: [], check: [], approve: [] };
   todos.forEach((t, i) => list[colOf(t)].push(i));
   const nBack = todos.filter(t => t.kind === 'returned').length;
@@ -1231,6 +1258,8 @@ function renderHome() {
     if (t.kind === 'entry') openEntry(t.formNo, { machineNo: t.machineNo });
     else if (t.kind === 'entryMulti') openMulti(t.formNo);
     else if (t.kind === 'kaizen') openKaizen(t.formNo, t.recordId);
+    else if (t.kind === 'ijou') openIjou(t.formNo, { recordId: t.recordId });
+    else if (t.kind === 'ijouYear') openIjouYear(t.fy);
     else if (t.kind === 'bulkConfirm' || t.kind === 'bulkApprove') openBulk(t.kind === 'bulkConfirm' ? 'confirm' : 'approve', t.formNo);
     else openDetail(t.recordId, 'home');
   }));
@@ -1453,6 +1482,7 @@ function openEntry(formNo, opt) {
   const f = formOf(formNo);
   if (isDailyForm(f)) { if (opt.machineNo || opt.ym) openDaily(formNo, opt.machineNo || '', opt.ym || S.boot.today.slice(0, 7), opt.date); else openMulti(formNo, opt.date); }
   else if (isKaizenForm(f)) { if (opt.recordId) openKaizen(formNo, opt.recordId); else openKaizenStart(formNo); }
+  else if (isIjouForm(f)) openIjou(formNo, opt);
   else openGeneric(formNo, opt.recordId);
 }
 
@@ -1563,7 +1593,7 @@ function renderMulti() {
     keys + '<p class="mt-how">ふだんは <b>数値を入れる → 機械ごとの「すべて問題なし」→ まとめて提出</b>。△・× は押して変えます。範囲内の数値は自動でレになります。</p>' +
     '<p class="mt-how"><button type="button" class="linkbtn" id="mtOne">1台ずつの画面で記入する</button>　確認：' + esc(d.route.checker || '―') + '　承認：' + esc(d.route.approver || '―') + '</p></div>' + mtCalendar() + '</div>' +
     '<div class="mt-wrap"><table class="mt"><thead><tr><th scope="col">点検項目</th>' + th + '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
-    '<div class="alert" id="mtX" hidden><b>×（要修理）があります。</b>「設備異常アクション手順」に従い、設備異常記録台帳にも記入してください。</div>' +
+    xAlertHtml('mtX', true) +
     '<div class="mt-bar" id="mtBar">' + mtBar() + '</div>';
   mtWire();
   mtAlerts();
@@ -1636,6 +1666,7 @@ function mtNoRun(mcNo) {
 }
 function mtWire() {
   const v = $('#v-entry'), d = S.multi;
+  wireProc(v);
   v.querySelectorAll('.mt-b').forEach(b => b.onclick = () => { mtSetMark(b.dataset.m, b.dataset.no, b.dataset.v); mtRefresh(b.dataset.m, b.dataset.no); });
   v.querySelectorAll('.mt-in').forEach(i => i.oninput = () => { mtNum(i.dataset.m, i.dataset.no, i.value.trim()); mtRefresh(i.dataset.m, i.dataset.no); });
   v.querySelectorAll('[data-ok]').forEach(b => b.onclick = () => {
@@ -1686,10 +1717,12 @@ async function mtSubmit() {
   let r;
   try { r = await run('saveDailyBatch', list, S.asEmail); } catch (e) { $('#mtSubmit').disabled = false; return; }
   toast(r.count + '台を提出しました' + (r.reconfirm ? '（確認済みの日を直したので、確認をやり直してもらいます）' : ''));
+  const xs = list.filter(x => Object.values(x.marks).some(mk => mk.mark === '×')).map(x => ({ date: x.date, machine: (d.machines.find(mc => mc.no === x.machineNo) || {}).label || x.machineNo, what: x.note, src: x.formNo + ':' + x.machineNo + ':' + x.date }));
   await openMulti(d.form.no, d.date);
   // 入力途中だった機械は、そのまま残す
   if (S.multi) { Object.keys(keep).forEach(no => { if (S.msel[no]) S.msel[no] = keep[no]; }); renderMulti(); }
   boot(true);
+  offerIjou(xs);
 }
 
 /* ---- ② 日付×項目チェック表 ---- */
@@ -1783,7 +1816,7 @@ function renderGroupDaily() {
     ((d.days[s.date] || {}).rest ? '<div class="info">この日は「休み」として記録されています（担当者の欄は「休」、確認・承認はいりません）。点検した日なら、記入し直して提出してください。</div>' : '') +
     (conf ? '<div class="info">この日は ' + esc(conf.by) + ' さんが確認済みです。直すと、確認をやり直してもらうことになります。</div>' : '') +
     body +
-    '<div class="alert" id="xAlert"' + (S.daily.items.some(it => /^per/.test(grpKind(it)) && Object.values(s.per[it.no] || {}).indexOf('×') >= 0) ? '' : ' hidden') + '><b>×（要修理）があります。</b>「設備異常アクション手順」に従い、設備異常記録台帳にも記入してください。</div>' +
+    xAlertHtml('xAlert', !S.daily.items.some(it => /^per/.test(grpKind(it)) && Object.values(s.per[it.no] || {}).indexOf('×') >= 0)) +
     '<div class="notes"><label for="note"><b>備考</b>　<small style="color:var(--muted)">△・×をつけたときは内容を書いてください</small></label><textarea id="note"' + dis + ' class="' + (gBad().length && !String(s.note).trim() ? 'need' : '') + '" placeholder="' + esc(notePh(f.no, d.members)) + '">' + esc(s.note) + '</textarea></div>' +
     (locked ? '' : '<div class="submit-bar"><small class="g-left">' + (left.length ? 'まだ：' + esc(left.join('、')) : '担当者：' + esc(d.me) + '（自動で入ります）') + '</small><button type="submit" class="btn primary big"' + (left.length ? ' disabled' : '') + '>提出する</button></div>') +
     '</form><div class="panel"><div class="panel-head"><h2>' + esc(d.machine.label) + '　' + esc(d.ym) + '</h2><small style="color:var(--muted)">日付をタップすると、その日を開きます</small></div><div class="sheet-wrap"><table class="sheet" id="sheet"></table></div>' +
@@ -1791,6 +1824,7 @@ function renderGroupDaily() {
     '<div>確認：' + esc(d.route.checker || '―') + '（管理監督者）　承認：' + esc(d.route.approver || '―') + '（' + esc(d.route.timing) + '）</div>' +
     (d.notes || []).map(n => '<div>' + (n.head ? '<b>' + esc(n.head) + '</b> ' : '') + esc(n.text) + '</div>').join('') + '</div></div></div>';
   renderSheet();
+  wireProc($('#v-entry'));
   $('#ymSel').addEventListener('change', e => { if (e.target.value) openDaily(f.no, d.machine.no, e.target.value); });
   $('#dateSel').addEventListener('change', e => { loadDay(e.target.value); renderDaily(); });
   if (locked) return;
@@ -1829,6 +1863,8 @@ async function gSubmit() {
   toast((s.noRun ? '稼働なしとして記録しました' : '提出しました') + (r.reconfirm ? '（確認済みの日を直したので、確認をやり直してもらいます）' : ''));
   await openDaily(d.form.no, d.machine.no, d.ym, s.date, r.sheet);
   boot(true);
+  const xs = []; d.items.filter(it => /^per/.test(grpKind(it))).forEach(it => Object.keys(s.per[it.no] || {}).forEach(n => { if (s.per[it.no][n] === '×' && xs.indexOf(n) < 0) xs.push(n); }));
+  if (xs.length) offerIjou(xs.map(n => ({ date: s.date, machine: n + '号機 ' + gName(n), what: s.note, src: d.form.no + ':' + d.machine.no + ':' + s.date })));
 }
 // 月の表の1マス（機械ごとの記号はレ、△・×はその機番つき。機番の項目は機番）
 function gCell(it, mk, member) {
@@ -1907,7 +1943,7 @@ function renderDaily() {
     ((d.days[sel.date] || {}).rest ? '<div class="info">この日は「休み」として記録されています（担当者の欄は「休」、確認・承認はいりません）。点検した日なら、記入し直して提出してください。</div>' : '') +
     (conf ? '<div class="info">この日は ' + esc(conf.by) + ' さんが確認済みです。直すと、確認をやり直してもらうことになります。</div>' : '') +
     items +
-    '<div class="alert" id="xAlert" hidden><b>×（要修理）があります。</b>「設備異常アクション手順」に従い、設備異常記録台帳にも記入してください。</div>' +
+    xAlertHtml('xAlert', true) +
     '<div class="notes"><label for="note"><b>' + esc(noteItem ? noteItem.name : '備考') + '</b>　<small style="color:var(--muted)">△・×をつけたときは内容を書いてください</small></label><textarea id="note"' + (locked ? ' disabled' : '') + ' placeholder="' + esc(notePh(f.no)) + '">' + esc((d.days[sel.date] || {}).rest ? '' : sel.note) + '</textarea></div>' +
     (locked ? '' : '<div class="submit-bar"><small>担当者：' + esc(d.me) + '（自動で入ります）</small><div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn" id="noRun">この日は稼働なし（／）</button><button type="submit" class="btn primary big">提出する</button></div></div>') +
     '</form><div class="panel"><div class="panel-head"><h2>' + esc(d.machine.label) + '　' + esc(d.ym) + '</h2><small style="color:var(--muted)">日付をタップすると、その日を開きます</small></div><div class="sheet-wrap"><table class="sheet" id="sheet"></table></div>' +
@@ -1918,6 +1954,7 @@ function renderDaily() {
 
   renderSheet();
   refreshAlerts();
+  wireProc($('#v-entry'));
   checkItems().forEach(it => { if (/数値/.test(it.kind) && !it.fixed) validateNum(it.no); });
   $('#mcSel').addEventListener('change', e => openDaily(f.no, e.target.value, d.ym));
   if ($('#toMulti')) $('#toMulti').addEventListener('click', () => openMulti(f.no, sel.date));
@@ -2001,6 +2038,7 @@ async function submitDay(msg) {
   toast(msg + (r.reconfirm ? '（確認済みの日を直したので、確認をやり直してもらいます）' : ''));
   await openDaily(d.form.no, d.machine.no, d.ym, sel.date, r.sheet);
   boot(true);
+  if (v.indexOf('×') >= 0) offerIjou([{ date: sel.date, machine: d.machine.label, what: sel.note, src: d.form.no + ':' + d.machine.no + ':' + sel.date }]);
 }
 // 休み（担当者が休み）：その日の項目と管理監督者欄は ／、担当者欄は「休」。確認・承認はいらない（v0.20.0）
 const REST_ASK = date => jpDate(date) + ' を「休み」として記録します。\n点検の項目と管理監督者の欄は ／、担当者の欄は「休」になり、確認・承認はいりません。よろしいですか？';
@@ -2464,13 +2502,14 @@ async function openDetail(recordId, back) {
   const partsHtml = rec.participants ? '<section class="parts"><h2>参加者の押印（' + rec.participants.filter(p => p.stamped).length + '／' + rec.participants.length + '人）</h2><div class="parts-row">' +
     rec.participants.map(p => '<div class="stamp">' + (p.stamped ? hankoImg(p.hanko, p.name, 58) : '<div class="hanko"></div>') + '<span>' + esc(p.name) + (p.stamped ? '<br>' + esc(fmtAt(p.at)) : '<br>未押印') + '</span></div>').join('') + '</div></section>' : '';
   const editBtn = rec.kaizen ? (rec.canEdit ? '<button class="btn primary" id="dEdit">' + (rec.state === '差し戻し' ? '直して再提出する' : '「' + esc(rec.kaizen.stageNames[rec.kaizen.current - 1]) + '」を記入する') + '</button>' : '')
+    : rec.ijou && rec.canEdit ? '<button class="btn primary" id="dEdit">' + (rec.state === '差し戻し' ? '直して再提出する' : '続きを記入する') + '</button>'
     : rec.canEdit && rec.state === '差し戻し' ? '<button class="btn primary" id="dEdit">' + (rec.daily ? '記入画面で直す' : '直して再提出する') + '</button>' : '';
   const pdfOk = rec.kaizen ? rec.kaizen.anyApproved : rec.state === '承認済み';
   $('#v-detail').innerHTML =
     '<button class="linkbtn" id="dBack">← もどる</button><div class="eyebrow" style="margin-top:8px">' + esc(rec.code) + '</div><h1>' + esc(rec.formName) + '</h1>' +
     '<div class="doc-meta"><span>対象 ' + esc(rec.targetLabel || rec.target) + '</span><span>期間 ' + esc(rec.period) + '</span><span>作成 ' + esc(rec.maker) + '（' + esc(rec.madeAt.slice(0, 10)) + '）</span><span class="st ' + st + '">' + esc(rec.state) + '</span></div>' +
     (rec.returnComment ? '<div class="alert" style="margin:12px 0"><b>差し戻しの理由：</b>' + esc(rec.returnComment) + '</div>' : '') +
-    stamps + body + partsHtml + actPanel +
+    stamps + body + ijDetailHtml(rec) + partsHtml + actPanel +
     ((pdfOk || editBtn) ? '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;align-items:center">' + (pdfOk ? (rec.pdfUrl ? '<a class="btn primary" href="' + esc(rec.pdfUrl) + '" target="_blank" rel="noopener">PDFを開く ↗</a><button class="linkbtn" id="dPdf">PDFを作り直す</button>' : '<button class="btn primary" id="dPdf">PDFを作る</button>') : '') + editBtn + '<span id="pdfOut"></span></div>' : '') +
     '<ul class="logs">' + rec.logs.map(l => '<li>' + esc(l.at) + '　' + esc(l.action) + '　' + esc(l.name) + (l.comment ? '：' + esc(l.comment) : '') + '</li>').join('') + '</ul>';
   if (rec.daily) {
@@ -2527,7 +2566,8 @@ async function openDetail(recordId, back) {
       (r.trouble ? (r.trouble.url ? '<br><a class="pdf-link" href="' + esc(r.trouble.url) + '" target="_blank" rel="noopener">過去トラ用のフォルダ「' + esc(r.trouble.name) + '」にも置きました ↗</a>' : '<br><span class="ng">過去トラ用のフォルダに置けませんでした：' + esc(r.trouble.error) + '</span>') : '');
   });
   const eb = $('#dEdit');
-  if (eb) eb.addEventListener('click', () => rec.kaizen ? openKaizen(rec.formNo, rec.recordId) : rec.daily ? openDaily(rec.formNo, rec.target, rec.period) : openGeneric(rec.formNo, rec.recordId));
+  wireIjDetail(rec);
+  if (eb) eb.addEventListener('click', () => rec.ijou ? openIjou(rec.formNo, { recordId: rec.recordId }) : rec.kaizen ? openKaizen(rec.formNo, rec.recordId) : rec.daily ? openDaily(rec.formNo, rec.target, rec.period) : openGeneric(rec.formNo, rec.recordId));
   go('detail');
 }
 // 承認のあと、PDFを裏で作る（画面は待たない）。できたらお知らせし、その記録を開いていれば表示を更新する
@@ -2998,6 +3038,223 @@ function kaizenViewHtml(rec) {
         return '<dt>' + esc(q.q.replace(/[？?].*$/, '').replace(/^なぜなぜ分析：/, '')) + '</dt><dd>' + html + '</dd>';
       }).join('') + '</dl>').join('')) + '</section>';
   }).join('');
+}
+</script>
+
+<script>
+/* ================= 設備異常記録台帳（QC-01-030付表1、帳票No.32、v0.21.0） =================
+ * 点検で ×（要修理）が出たら、手順（QC-01-030）を見て台帳に記入する。
+ * 見本 https://claude.ai/artifact/KLLexmejdje83KeeQiWgsa でユーザー合意。
+ */
+const IJ = { date: 1, person: 2, machine: 3, what: 4, fixDate: 5, fix: 6, prevent: 7, before: 8, beforeFix: 9, after: 10, afterFix: 11, re: 12, reDate: 13, src: 14 };
+function isIjouForm(f) { return !!f && String(f.type).indexOf('⑥') === 0; }
+function ijFormNo() { const f = (S.boot.forms || []).find(isIjouForm); return f ? f.no : 32; }
+
+// 手順の要点（画面の中央に出す）
+function showProc(proc, onLedger) {
+  const bg = document.createElement('div');
+  bg.className = 'ask-bg';
+  bg.innerHTML = '<div class="ask ij-proc" role="dialog" aria-modal="true" aria-labelledby="ijProcT"><h3 id="ijProcT"></h3><div class="ij-code mono"></div><ol></ol>' +
+    '<div class="ask-btns"><button type="button" class="btn" data-a="0">閉じる</button>' + (onLedger ? '<button type="button" class="btn primary" data-a="1">台帳に記入する</button>' : '') + '</div></div>';
+  bg.querySelector('h3').textContent = proc.name;
+  bg.querySelector('.ij-code').textContent = proc.code;
+  bg.querySelector('ol').innerHTML = proc.steps.map(s => '<li>' + esc(s) + '</li>').join('');
+  const done = v => { document.removeEventListener('keydown', key); bg.remove(); if (v && onLedger) onLedger(); };
+  const key = e => { if (e.key === 'Escape') done(false); };
+  bg.addEventListener('click', e => { if (e.target === bg) done(false); const b = e.target.closest('[data-a]'); if (b) done(b.dataset.a === '1'); });
+  document.addEventListener('keydown', key);
+  document.body.appendChild(bg);
+  bg.querySelector('[data-a="' + (onLedger ? 1 : 0) + '"]').focus();
+}
+const IJ_PROC = { code: 'QC-01-030', name: '設備異常アクション手順', steps: [
+  '設備異常（停電・火災・故障）に対処する。',
+  '対処後、設備異常の前に作ったワーク5個と、設備復旧後に作ったワーク5個を、全数全箇所検査する。',
+  '異常前の品に不具合があったときは、全数ロットアウトとする。',
+  '復旧後の品に不具合があったときは、機械メーカーに再度連絡する。',
+  'その記録を設備異常記録台帳に記録する。'] };
+
+// 点検の記入画面の × の案内（ボタンつき）
+function xAlertHtml(id, hidden) {
+  return '<div class="alert ij-x" id="' + id + '"' + (hidden ? ' hidden' : '') + '><b>×（要修理）があります。</b>設備異常アクション手順（QC-01-030）に従ってください。提出すると、そのまま設備異常記録台帳の記入に進めます。' +
+    '<div class="ij-x-b"><button type="button" class="btn sm" data-proc="1">手順を見る</button></div></div>';
+}
+function wireProc(root) { (root || document).querySelectorAll('[data-proc]').forEach(b => b.onclick = () => showProc(IJ_PROC)); }
+
+// 点検を提出したあと、× があれば台帳の記入をすすめる
+async function offerIjou(list) {
+  if (!list || !list.length) return;
+  const names = list.map(x => x.machine).join('、');
+  if (!(await ask('×（要修理）を付けた機械があります（' + names + '）。\n設備異常記録台帳に記入しますか？\n（あとで書くときは、帳票一覧の「設備異常記録台帳」から開けます）', '台帳に記入する'))) return;
+  openIjou(ijFormNo(), { prefill: list[0] });
+}
+
+/* ---- 入口：台帳（年度ごと）・記入・記録 ---- */
+async function openIjou(formNo, opt) {
+  opt = opt || {};
+  if (!opt.recordId && !opt.prefill && !opt.blank) return openIjouYear(opt.fy);
+  let d;
+  try { d = await run('getIjou', opt.recordId || '', opt.prefill || null, S.asEmail); } catch (e) { return; }
+  if (opt.recordId && !d.canEdit) { openDetail(opt.recordId, 'forms'); return; }
+  S.ijou = d;
+  renderIjou();
+  go('entry');
+}
+
+function ijVal(no) { const el = $('#ij' + no); if (!el) return S.ijou.values[no] || ''; return el.value; }
+function ijJudge(no) { const b = document.querySelector('[data-ijg="' + no + '"][aria-pressed="true"]'); return b ? b.dataset.v : ''; }
+function ijCollect() {
+  const v = Object.assign({}, S.ijou.values);
+  [IJ.date, IJ.person, IJ.machine, IJ.what, IJ.fixDate, IJ.fix, IJ.prevent, IJ.beforeFix, IJ.afterFix].forEach(no => { v[no] = ijVal(no).trim(); });
+  v[IJ.before] = ijJudge(IJ.before); v[IJ.after] = ijJudge(IJ.after);
+  if (v[IJ.before] !== '否') v[IJ.beforeFix] = '';
+  if (v[IJ.after] !== '否') v[IJ.afterFix] = '';
+  return v;
+}
+function ijMissing(v) {
+  const out = [];
+  [[IJ.date, '発生日', 0], [IJ.person, '担当者', 0], [IJ.machine, '機種／機番', 0], [IJ.what, '異常内容', 0], [IJ.fixDate, '対処日', 1], [IJ.fix, '対処内容', 1], [IJ.prevent, '再発防止策', 1],
+   [IJ.before, '異常前の品の検査', 2], [IJ.after, '復旧後の品の検査', 3]].forEach(([no, name, sec]) => { if (!v[no]) out.push([no, name, sec]); });
+  if (v[IJ.before] === '否' && !v[IJ.beforeFix]) out.push([IJ.beforeFix, '異常前の品：否のときの対処内容', 2]);
+  if (v[IJ.after] === '否' && !v[IJ.afterFix]) out.push([IJ.afterFix, '復旧後の品：否のときの対処内容', 3]);
+  return out;
+}
+
+function renderIjou() {
+  const d = S.ijou, f = d.form, v = d.values;
+  const fld = (no, label, ctrl, sub) => '<div class="gen-f" data-item="' + no + '"><label class="gen-lb" for="ij' + no + '">' + esc(label) + (sub ? '<span class="gen-sub">' + esc(sub) + '</span>' : '') + '</label><div class="gen-c">' + ctrl + '</div></div>';
+  const auto = d.recordId ? '' : '<span class="ij-auto">自動</span>';
+  const date = no => '<div class="gen-row"><input type="date" id="ij' + no + '" value="' + esc(v[no] || '') + '" max="' + esc(S.boot.today) + '"><button type="button" class="btn sm" data-today="ij' + no + '">今日</button></div>';
+  const txt = (no, ph) => '<textarea id="ij' + no + '" rows="3" placeholder="' + esc(ph || '') + '">' + esc(v[no] || '') + '</textarea>';
+  const judge = no => '<div class="ij-gk" role="group"><button type="button" class="go" data-ijg="' + no + '" data-v="合" aria-pressed="' + (v[no] === '合') + '">合<small>不具合なし</small></button><button type="button" class="no" data-ijg="' + no + '" data-v="否" aria-pressed="' + (v[no] === '否') + '">否<small>不具合あり</small></button></div>';
+  const sec = (i, title, body) => '<section class="gen-sec" id="ijs' + i + '"><div class="gen-sec-h"><span class="n">' + '①②③④'.charAt(i) + '</span><b>' + esc(title) + '</b><small id="ijsc' + i + '"></small></div><div class="gen-sec-b">' + body + '</div></section>';
+  $('#v-entry').innerHTML =
+    '<div class="doc-head"><div><div class="eyebrow">' + esc(f.cat) + ' ・ 異常があったとき</div><h1>' + esc(f.name) + '</h1>' +
+    '<div class="doc-meta"><span>管理番号 <span class="mono">' + esc(f.code) + '</span></span><span>設備異常アクション手順（QC-01-030）</span><span>' + esc(f.keep ? f.keep + '保管' : '') + '</span><span>' + (fyOfDate(v[IJ.date]) + '年度') + '　<b>No.' + d.n + '</b></span></div></div>' +
+    '<div class="pickers"><button type="button" class="btn" id="ijYear">年度の台帳を見る</button></div></div>' +
+    (d.returnComment ? '<div class="alert" style="margin:0 0 16px"><b>差し戻されました：</b>' + esc(d.returnComment) + '</div>' : '') +
+    '<div class="gen-grid"><form id="ijForm" novalidate>' +
+    sec(0, '発生', fld(IJ.date, '発生日', date(IJ.date)) +
+      fld(IJ.person, '担当者', '<select id="ij' + IJ.person + '">' + d.people.map(p => '<option' + (p === v[IJ.person] ? ' selected' : '') + '>' + esc(p) + '</option>').join('') + '</select>') +
+      fld(IJ.machine, '機種／機番', '<input type="text" id="ij' + IJ.machine + '" list="ijMc" value="' + esc(v[IJ.machine] || '') + '" placeholder="例：B12Ⅵ N 80号機"><datalist id="ijMc">' + d.machines.map(x => '<option value="' + esc(x) + '">').join('') + '</datalist>') +
+      fld(IJ.what, '異常内容', txt(IJ.what, '例：主軸から異音。回転数を上げると大きくなる'), v[IJ.src] ? '点検の備考から入りました。直せます' : '')) +
+    sec(1, '対処', fld(IJ.fixDate, '対処日', date(IJ.fixDate)) + fld(IJ.fix, '対処内容', txt(IJ.fix, '例：メーカーに修理を依頼。主軸ベアリングを交換')) + fld(IJ.prevent, '再発防止策', txt(IJ.prevent, '例：主軸の異音を始業前点検に入れる'))) +
+    sec(2, '異常前の品の検査（5個・全数全箇所）', '<div class="gen-f"><span class="gen-lb">判定</span><div class="gen-c">' + judge(IJ.before) + '<div class="ij-rule" id="ijr' + IJ.before + '"></div></div></div>' +
+      '<div id="ijw' + IJ.beforeFix + '">' + fld(IJ.beforeFix, '否のときの対処内容', txt(IJ.beforeFix, '例：全数ロットアウト（120個）')) + '</div>') +
+    sec(3, '復旧後の品の検査（5個・全数全箇所）', '<div class="gen-f"><span class="gen-lb">判定</span><div class="gen-c">' + judge(IJ.after) + '<div class="ij-rule" id="ijr' + IJ.after + '"></div></div></div>' +
+      '<div id="ijw' + IJ.afterFix + '">' + fld(IJ.afterFix, '否のときの対処内容', txt(IJ.afterFix, '例：メーカーに再度連絡。11/25に再調整の予定')) + '</div>') +
+    '</form><aside class="gen-side" aria-label="提出の前に">' +
+    '<div class="gen-box"><h2>提出の前に</h2><ul class="gen-chk" id="ijChk"></ul></div>' +
+    '<div class="gen-box gen-submit"><span class="gen-msg" id="ijMsg"></span><button type="button" class="btn primary big" id="ijSubmit">' + (d.state === '差し戻し' ? '直して再提出する' : '提出する') + '</button>' +
+    '<button type="button" class="btn" id="ijSave">途中保存</button><small id="ijSaved">' + (d.recordId ? '修理が終わるまでは、途中保存で置いておけます。ホームの「記入」に残ります' : '途中保存すると、ホームの「記入」に残ります') + '</small></div>' +
+    '<div class="gen-box"><h2>提出したあとの流れ</h2><ol class="gen-flow"><li><b>確認</b><small>' + esc(d.route.checker || '―') + ' さん（管理監督者）</small></li><li><b>承認</b><small>' + esc(d.route.approver || '―') + ' さん</small></li><li><b>年度の台帳PDFに入る</b><small>承認されるたびに作り直します</small></li><li><b>年度末の承認</b><small>5月の終わりに社長が台帳全体を承認</small></li></ol></div>' +
+    '<div class="gen-box"><h2>手順の要点（QC-01-030）</h2><p class="ij-tip">異常前5個・復旧後5個を全数全箇所検査。異常前に不具合→全数ロットアウト。復旧後に不具合→メーカーに再度連絡。</p><div style="padding:0 14px 14px"><button type="button" class="btn" style="width:100%" id="ijProc">手順を見る</button></div></div>' +
+    '</aside></div>';
+  if (auto) [IJ.date, IJ.person, IJ.machine].forEach(no => { const l = document.querySelector('[data-item="' + no + '"] .gen-lb'); if (l && (no !== IJ.machine || v[no])) l.insertAdjacentHTML('beforeend', auto); });
+  const form = $('#ijForm');
+  form.querySelectorAll('[data-today]').forEach(b => b.onclick = () => { $('#' + b.dataset.today).value = S.boot.today; ijUpdate(); });
+  form.querySelectorAll('[data-ijg]').forEach(b => b.onclick = () => {
+    form.querySelectorAll('[data-ijg="' + b.dataset.ijg + '"]').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    ijUpdate();
+  });
+  form.addEventListener('input', ijUpdate);
+  form.addEventListener('change', ijUpdate);
+  form.addEventListener('submit', e => e.preventDefault());
+  $('#ijSubmit').onclick = () => saveIjouUi(true);
+  $('#ijSave').onclick = () => saveIjouUi(false);
+  $('#ijProc').onclick = () => showProc(IJ_PROC);
+  $('#ijYear').onclick = () => openIjouYear(fyOfDate(ijVal(IJ.date) || S.boot.today));
+  ijUpdate();
+}
+function fyOfDate(s) { const y = +String(s).slice(0, 4), m = +String(s).slice(5, 7); return m >= 6 ? y : y - 1; }
+function ijUpdate() {
+  const v = ijCollect(), miss = ijMissing(v);
+  [IJ.before, IJ.after].forEach(no => {
+    const r = $('#ijr' + no), w = $('#ijw' + (no + 1));
+    if (w) w.hidden = v[no] !== '否';
+    if (r) { r.className = 'ij-rule' + (v[no] === '否' ? ' ng' : ''); r.textContent = v[no] === '否' ? (no === IJ.before ? '「否」なので全数ロットアウトです。対処内容を書いてください。' : '「否」なので機械メーカーに再度連絡し、対処内容を書いてください。') : no === IJ.before ? '「否」のときは全数ロットアウト。対処内容を書きます。' : '「否」のときは機械メーカーに再度連絡。対処内容を書きます。'; }
+  });
+  for (let i = 0; i < 4; i++) { const c = $('#ijsc' + i), n = miss.filter(x => x[2] === i).length; if (c) { c.textContent = n ? '残り ' + n + '項目' : '✔ 入力済み'; c.className = n ? '' : 'done'; } }
+  const all = [[IJ.date, '発生（日・担当者・機番・内容）', 0], [IJ.fixDate, '対処（日・内容・再発防止策）', 1], [IJ.before, '異常前の品の検査', 2], [IJ.after, '復旧後の品の検査', 3]];
+  $('#ijChk').innerHTML = all.map(([no, name, i]) => { const ok = !miss.some(x => x[2] === i); return '<li class="' + (ok ? 'ok' : 'no') + '"><i>' + (ok ? '✔' : '！') + '</i><a href="#ijs' + i + '" data-go="' + i + '">' + esc(name) + '</a></li>'; }).join('');
+  $('#ijChk').querySelectorAll('[data-go]').forEach(a => a.onclick = e => { e.preventDefault(); $('#ijs' + a.dataset.go).scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+  $('#ijMsg').textContent = miss.length ? 'まだの項目が ' + miss.length + 'つあります' : '';
+  $('#ijSubmit').disabled = miss.length > 0;
+}
+async function saveIjouUi(submit) {
+  const d = S.ijou, v = ijCollect();
+  if (!v[IJ.date]) { toast('発生日を入れてください', true); return; }
+  if (submit) {
+    const miss = ijMissing(v); if (miss.length) { toast('まだの項目があります：' + miss.map(x => x[1]).join('、'), true); return; }
+    if (!(await ask('設備異常記録台帳を提出します。\n' + (d.route.checker || '管理監督者') + ' さんの確認、' + (d.route.approver || '社長') + ' さんの承認に進みます。', '提出する'))) return;
+  }
+  let r;
+  try { r = await run('saveIjou', { recordId: d.recordId, values: v, submit: submit }, S.asEmail); } catch (e) { return; }
+  d.recordId = r.recordId; d.values = v; d.state = r.state;
+  if (submit) { toast('提出しました'); boot(true); openDetail(r.recordId, 'home'); return; }
+  toast('途中まで保存しました');
+  const sv = $('#ijSaved'); if (sv) sv.textContent = '✔ 途中まで保存しました（' + fmtAt(r.savedAt) + '）';
+  boot(true);
+}
+
+/* ---- 年度の台帳 ---- */
+async function openIjouYear(fy) {
+  let d;
+  try { d = await run('getIjouYear', fy || '', S.asEmail); } catch (e) { return; }
+  S.ijYear = d;
+  const st = s => '<span class="st ' + (s === '承認済み' ? 'done' : s === '差し戻し' ? 'back' : 'wait') + '">' + esc(s) + '</span>';
+  const jd = (j, re) => j ? '<b class="ij-j ' + (j === '否' ? 'no' : 'go') + '">' + esc(j) + '</b>' + (j === '否' && re ? '<small class="ij-re">→ 合 ' + esc(re) + '</small>' : '') : '';
+  const ap = (label, s, can, kind, note) => '<div class="ij-ap"><span>' + label + '</span>' + (s ? dateStamp(s.info, s.date, 64) : can ? '<button class="hanko me" data-yap="' + kind + '">承認<br>押印</button>' : '<div class="hanko"></div>') + '<small>' + esc(note || '') + '</small></div>';
+  $('#v-entry').innerHTML =
+    '<div class="doc-head"><div><div class="eyebrow">設備点検 ・ 年度の台帳</div><h1>' + esc(d.form.name) + '</h1>' +
+    '<div class="doc-meta"><span>管理番号 <span class="mono">' + esc(d.form.code) + '</span></span><span>' + esc(d.fyLabel) + '</span><span>' + d.rows.length + '件</span></div></div>' +
+    '<div class="pickers"><label class="picker" for="ijFy">年度<select id="ijFy">' + d.years.map(y => '<option value="' + y + '"' + (y === d.fy ? ' selected' : '') + '>' + y + '年度</option>').join('') + '</select></label>' +
+    '<button type="button" class="btn" id="ijProc2">手順を見る</button><button type="button" class="btn primary" id="ijNew">新しく記入する</button></div></div>' +
+    '<div class="panel"><div class="sheet-wrap"><table class="rec ij-tbl"><thead><tr><th>No.</th><th>発生日</th><th>機種／機番</th><th>異常内容</th><th>異常前</th><th>復旧後</th><th>担当者</th><th>状態</th></tr></thead><tbody>' +
+    (d.rows.length ? d.rows.map(x => '<tr data-rid="' + esc(x.recordId) + '" data-st="' + esc(x.state) + '" tabindex="0"><td class="mono">' + x.n + '</td><td>' + esc(x.date) + '</td><td>' + esc(x.machine) + '</td><td>' + esc(x.what) + '</td><td>' + jd(x.before, x.after !== '否' ? x.reDate : '') + '</td><td>' + jd(x.after, x.reDate) + (x.needsRe ? '<small class="ij-re ng">修理完了・合の判定まだ</small>' : '') + '</td><td>' + esc(x.person) + '</td><td>' + st(x.state) + '</td></tr>').join('')
+      : '<tr><td colspan="8" class="ij-empty">この年度の記録はまだありません。点検で ×（要修理）を付けたときや、「新しく記入する」から記入します。</td></tr>') +
+    '</tbody></table></div></div>' +
+    '<section class="ij-aps"><h2>年度の承認（社長）</h2><div class="ij-ap-row">' +
+    ap('年度末承認', d.yearEnd, d.canYearEnd, '年度末', d.yearEnd ? fmtAt(d.yearEnd.at) : '5月の最後の出勤日から') +
+    ap('最終承認', d.final, d.canFinal, '最終', d.final ? fmtAt(d.final.at) : d.finalNeeded ? '修理完了・合の判定がそろったら' : d.yearEnd ? '該当なし' : '「否」・修理未完了があるときだけ') +
+    '</div>' + (d.why ? '<p class="waiting">' + esc(d.why) + '</p>' : '') +
+    (d.pdfUrl ? '<a class="btn primary" href="' + esc(d.pdfUrl) + '" target="_blank" rel="noopener">台帳のPDFを開く ↗</a>' : '<p class="hint">台帳のPDFは、記録が1件承認されるとできます。</p>') + '</section>';
+  $('#ijFy').onchange = e => openIjouYear(+e.target.value);
+  $('#ijProc2').onclick = () => showProc(IJ_PROC);
+  $('#ijNew').onclick = () => openIjou(d.form.no, { blank: true });
+  $('#v-entry').querySelectorAll('[data-rid]').forEach(tr => {
+    const open = () => (tr.dataset.st === '記入中' || tr.dataset.st === '差し戻し') ? openIjou(d.form.no, { recordId: tr.dataset.rid }) : openDetail(tr.dataset.rid, 'forms');
+    tr.onclick = open; tr.onkeydown = e => { if (e.key === 'Enter') open(); };
+  });
+  $('#v-entry').querySelectorAll('[data-yap]').forEach(b => b.onclick = async () => {
+    const kind = b.dataset.yap;
+    if (!(await ask(d.fy + '年度の設備異常記録台帳（' + d.rows.length + '件）を' + (kind === '年度末' ? '年度末承認' : '最終承認') + 'します。', '承認して押印'))) return;
+    let r;
+    try { r = await run('approveIjouYear', d.fy, kind, S.asEmail); } catch (e) { return; }
+    toast(kind === '年度末' ? (r.finalNeeded ? '年度末承認しました。修理完了・合の判定がそろったら、最終承認をしてください' : '年度末承認しました') : '最終承認しました');
+    boot(true); openIjouYear(d.fy);
+  });
+  go('entry');
+}
+
+// 記録の画面：修理完了・合の判定を入れる（承認済みの「否」の記録）
+function ijDetailHtml(rec) {
+  if (!rec.ijou) return '';
+  let h = '<div style="margin:12px 0"><button type="button" class="btn" id="ijToYear">' + rec.ijou.fy + '年度の台帳を見る</button></div>';
+  if (rec.ijou.canRe) h += '<section class="act-panel"><h2>修理完了・合の判定を入れる</h2><p class="hint">「否」の判定がありました。修理が終わり、検査で「合」になったら日付を入れて押してください。年度末の最終承認の条件になります。</p>' +
+    '<div class="gen-row"><input type="date" id="ijReDate" value="' + esc(S.boot.today) + '" max="' + esc(S.boot.today) + '"><button type="button" class="btn primary" id="ijRe">合になった</button></div></section>';
+  return h;
+}
+function wireIjDetail(rec) {
+  if (!rec.ijou) return;
+  const y = $('#ijToYear'); if (y) y.onclick = () => openIjouYear(rec.ijou.fy);
+  const b = $('#ijRe'); if (!b) return;
+  b.onclick = async () => {
+    const dt = $('#ijReDate').value;
+    if (!dt) { toast('日付を入れてください', true); return; }
+    if (!(await ask(jpDate(dt) + ' に、修理完了・検査で「合」になったと記録します。', '記録する'))) return;
+    try { await run('rejudgeIjou', rec.recordId, dt, S.asEmail); } catch (e) { return; }
+    toast('記録しました'); makePdfInBackground(rec.recordId); boot(true); openDetail(rec.recordId, S.back);
+  };
 }
 </script>
 
