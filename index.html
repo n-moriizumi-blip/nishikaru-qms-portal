@@ -968,6 +968,10 @@ table.bkc{border-collapse:separate;border-spacing:0;width:100%;min-width:1100px}
 .pm-edit-bar b{color:var(--warn)}
 .pm-pl .who,.pm-pl .pm-nt,.pm-pl .pm-pd,#pmAddNo{font:inherit;font-size:13px;padding:3px 6px;border:1.5px solid var(--line);border-radius:3px;background:#fff}
 .pm-paper{display:inline-flex;gap:4px;align-items:center;font-size:12px}
+/* 予定表の確認欄（v0.22.1） */
+.pm-pl td.pm-jcell{white-space:normal}
+.pm-jc{display:inline-flex;align-items:center;gap:6px;margin:2px 4px}
+.pm-jc b{font-size:13px}.pm-jc small{font-size:11px;color:var(--muted)}
 </style>
 
 
@@ -1037,7 +1041,7 @@ img.rail-mark.qms-icon{background:transparent;object-fit:contain;padding:0}
 <div class="busy" id="busy" hidden><span>処理中…</span></div>
 
 <script>
-window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.22.0" };
+window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.22.1" };
 var qmsToken = null, qmsStarted = false;
 // IDトークンの中身はUTF-8（表示用だけに使う。だれかの判定はGAS側でトークンを確かめて得たメールだけを使う）
 function qmsDecode_(str){
@@ -3437,6 +3441,8 @@ function wireIjDetail(rec) {
  */
 const PM_MARKS = [['レ', '問題なし', ''], ['△', '調整・交換した', 'w'], ['×', '要修理', 'x'], ['━', '設備なし', '']];
 const PM_MONTHS = [6, 7, 8, 9, 10, 11, 12, 1, 2, 3, 4, 5];
+const PM_JL = { '合': '合格', '否': '不合格' }; // 画面の表示は合格・不合格（ユーザー指示）
+function pmJ(j) { return PM_JL[j] || j || ''; }
 function isPmForm(f) { return !!f && String(f.type).indexOf('⑦') === 0; }
 function isPmPlanForm(f) { return !!f && String(f.type).indexOf('⑧') === 0; }
 function pmNumOut(num, n) { const x = parseFloat(n); if (n === '' || n == null || isNaN(x)) return false; return (num.lt != null && !(x < num.lt)) || (num.le != null && !(x <= num.le)); }
@@ -3518,7 +3524,7 @@ function renderPm() {
     secs + xAlertHtml('pmX', true) + '</form>' +
     '<aside class="gen-side" aria-label="提出の前に"><div class="gen-box"><h2>提出の前に</h2><ul class="gen-chk" id="pmChk"></ul></div>' +
     '<div class="gen-box gen-submit"><span class="gen-msg" id="pmMsg"></span><button type="button" class="btn primary big" id="pmSubmit">' + (d.state === '差し戻し' ? '直して再提出する' : '提出する') + '</button><button type="button" class="btn" id="pmSave">途中保存</button><small id="pmSaved">途中保存すると、ホームの帯に「書きかけ」と出ます</small></div>' +
-    '<div class="gen-box"><h2>提出したあとの流れ</h2><ol class="gen-flow"><li><b>合・否の判定</b><small>' + esc(d.route.checker || '管理監督者') + ' さんが日付印。×があれば否</small></li><li><b>否のときは修理のあと再判定</b><small>設備異常アクション手順（QC-01-030）に従った作業のあと</small></li><li><b>承認</b><small>' + esc(d.route.approver || '社長') + ' さん</small></li><li><b>予定表に入る</b><small>実施日・確認日・合否が自動で入ります</small></li></ol></div>' +
+    '<div class="gen-box"><h2>提出したあとの流れ</h2><ol class="gen-flow"><li><b>合格・不合格の判定</b><small>' + esc(d.route.checker || '管理監督者') + ' さんが日付印。×があれば不合格</small></li><li><b>否のときは修理のあと再判定</b><small>設備異常アクション手順（QC-01-030）に従った作業のあと</small></li><li><b>承認</b><small>' + esc(d.route.approver || '社長') + ' さん</small></li><li><b>予定表に入る</b><small>実施日・確認日・合否が自動で入ります</small></li></ol></div>' +
     '<div class="gen-box"><h2>記号</h2><p class="ij-tip">レ 確認済・問題なし　△ 異常・消耗を見つけ調整・修理・交換した　× メーカー修理などが必要　━ その設備が無い機種</p></div></aside></div>';
   const v = $('#v-entry');
   v.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { const k = b.dataset.k; data.marks[k] = data.marks[k] === b.dataset.v ? '' : b.dataset.v; if (!data.marks[k]) delete data.marks[k]; pmRefresh(); });
@@ -3598,33 +3604,33 @@ function pmViewHtml(rec) {
   return '<div class="panel pm-view"><div class="pm-top"><div><small>機種</small><b>' + esc(p.machine.spec || '') + '</b></div><div><small>機番</small><b>' + esc(p.machine.no) + '号機</b></div><div><small>実施日</small><b>' + esc(jpDate(data.date || rec.period)) + '</b></div><div><small>担当者</small><b>' + esc(data.person || rec.maker) + '</b></div></div>' +
     p.def.map((s, si) => '<div class="pm-vs"><div class="gen-sec-h"><b>' + esc(s.name) + '</b></div>' + s.items.map(it => '<div class="pm-vr"><span class="no">' + it.no + '</span><span class="nm">' + esc(it.name) + '</span><span class="pv">' + it.parts.map((pt, pi) => '<span class="pv1">' + (pt ? '<small>' + esc(pt) + '</small>' : '') + cell(it, pi) + '</span>').join('') + '</span></div>').join('') +
       '<div class="pm-vr note"><span class="no"></span><span class="nm">備考</span><span class="pv">' + (String(notes[si] || '').trim() ? esc(notes[si]) : '<span class="sl">／</span>') + '</span></div></div>').join('') +
-    '<div class="pm-judge-v"><span>管理監督者の判定：<b class="' + (p.judge === '否' ? 'ng' : 'go') + '">' + esc(p.judge || 'まだ') + '</b></span>' + (p.judge === '否' ? '<span>修理後の判定：' + (p.re ? '<b class="go">合</b>（' + esc(fmtAt(p.re.at)) + ' ' + esc(p.re.by) + '）' : '<b class="ng">まだ</b>') + '</span>' : '') +
+    '<div class="pm-judge-v"><span>管理監督者の判定：<b class="' + (p.judge === '否' ? 'ng' : 'go') + '">' + esc(pmJ(p.judge) || 'まだ') + '</b></span>' + (p.judge === '否' ? '<span>修理後の判定：' + (p.re ? '<b class="go">合格</b>（' + esc(fmtAt(p.re.at)) + ' ' + esc(p.re.by) + '）' : '<b class="ng">まだ</b>') + '</span>' : '') +
     (p.reStamp ? '<span class="stamp">' + dateStamp(p.reStamp.info, p.reStamp.date, 56) + '<span>修理後の判定</span></span>' : '') + '</div>' +
     '<div style="margin-top:10px"><button type="button" class="btn sm" id="pmToPlan">' + p.fy + '年度の予定表を見る</button></div></div>';
 }
 function pmJudgeHtml(rec) {
   const hasX = Object.values((rec.pm.data || {}).marks || {}).some(m => m === '×');
-  return '<h2>合・否を判定して押印する</h2><p class="hint">上の点検の中身を確認して、合か否を押してください。' + (hasX ? '<b style="color:var(--shu)">×があるので「否」になります。</b>' : '') + '</p>' +
-    '<div class="act-row pm-jbtns"><button type="button" class="hanko me pm-go" data-judge="合"' + (hasX ? ' disabled' : '') + ' aria-label="合と判定して押印">合<br>押印</button><button type="button" class="hanko me pm-ng" data-judge="否" aria-label="否と判定して押印">否<br>押印</button></div>';
+  return '<h2>合格・不合格を判定して押印する</h2><p class="hint">上の点検の中身を確認して、合格か不合格を押してください。' + (hasX ? '<b style="color:var(--shu)">×があるので「不合格」になります。</b>' : '') + '</p>' +
+    '<div class="act-row pm-jbtns"><button type="button" class="hanko me pm-go" data-judge="合"' + (hasX ? ' disabled' : '') + ' aria-label="合格と判定して押印">合格<br>押印</button><button type="button" class="hanko me pm-ng" data-judge="否" aria-label="不合格と判定して押印">不合格<br>押印</button></div>';
 }
 function wirePmDetail(rec) {
   if (!rec.pm) return;
   const pl = $('#pmToPlan'); if (pl) pl.onclick = () => openPmPlan(rec.pm.fy);
   document.querySelectorAll('[data-judge]').forEach(b => b.onclick = async () => {
     const j = b.dataset.judge;
-    if (!(await ask(rec.pm.machine.label + ' の12ヶ月設備点検を「' + j + '」と判定して押印します。' + (j === '否' ? '\n修理が終わったら、改めて再判定してください。' : ''), j + 'と判定して押印'))) return;
+    if (!(await ask(rec.pm.machine.label + ' の12ヶ月設備点検を「' + pmJ(j) + '」と判定して押印します。' + (j === '否' ? '\n修理が終わったら、改めて再判定してください。' : ''), pmJ(j) + 'と判定して押印'))) return;
     try { await run('judgePm', rec.recordId, j, S.asEmail); } catch (e) { return; }
-    toast(j + 'と判定しました'); boot(true); openDetail(rec.recordId, S.back);
+    toast(pmJ(j) + 'と判定しました'); boot(true); openDetail(rec.recordId, S.back);
   });
   const re = $('#pmRe'); if (re) re.onclick = async () => {
-    if (!(await ask(rec.pm.machine.label + ' の修理が終わり、改めて「合」と判定して押印します。', '合と判定して押印'))) return;
+    if (!(await ask(rec.pm.machine.label + ' の修理が終わり、改めて「合格」と判定して押印します。', '合格と判定して押印'))) return;
     let r; try { r = await run('rejudgePm', rec.recordId, S.asEmail); } catch (e) { return; }
     toast('再判定しました'); if (r.makePdf) makePdfInBackground(rec.recordId); boot(true); openDetail(rec.recordId, S.back);
   };
 }
 function pmReHtml(rec) {
   if (!rec.pm || !rec.pm.canRe) return '';
-  return '<section class="act-panel"><h2>修理後の再判定</h2><p class="hint">「否」と判定した機械です。設備異常アクション手順（QC-01-030）に従った修理が終わり、改めて点検して問題なければ押してください。年度末の最終承認の条件になります。</p><div class="act-row"><button type="button" class="hanko me pm-go" id="pmRe">合<br>押印</button></div></section>';
+  return '<section class="act-panel"><h2>修理後の再判定</h2><p class="hint">「否」と判定した機械です。設備異常アクション手順（QC-01-030）に従った修理が終わり、改めて点検して問題なければ押してください。年度末の最終承認の条件になります。</p><div class="act-row"><button type="button" class="hanko me pm-go" id="pmRe">合格<br>押印</button></div></section>';
 }
 
 /* ---- 予定表（No.20） ---- */
@@ -3635,7 +3641,7 @@ async function openPmPlan(fy) {
   renderPmPlan();
   go('entry');
 }
-const PM_ST = { none: ['予定', 's-plan'], draft: ['書きかけ', 's-plan'], returned: ['差し戻し', 's-late'], wait: ['判定待ち', 's-wait'], approve: ['承認待ち', 's-wait'], done: ['合', 's-done'], ng: ['否', 's-ng'], paper: ['紙で実施', 's-paper'] };
+const PM_ST = { none: ['予定', 's-plan'], draft: ['書きかけ', 's-plan'], returned: ['差し戻し', 's-late'], wait: ['判定待ち', 's-wait'], approve: ['承認待ち', 's-wait'], done: ['合格', 's-done'], ng: ['不合格', 's-ng'], paper: ['紙で実施', 's-paper'] };
 function renderPmPlan() {
   const d = S.pmPlan, ed = S.pmEdit, curYm = d.today.slice(0, 7);
   const rows = ed || d.rows;
@@ -3651,9 +3657,9 @@ function renderPmPlan() {
   };
   const res = r => {
     if (r.paper) return '<td class="res mono">' + esc(r.paperDate ? r.paperDate.slice(5).replace('-', '/') : '―') + '</td><td class="res"><span class="sl">紙の記録</span></td>';
-    const j = r.judge ? '<b class="' + (r.judge === '否' ? 'ng' : 'go') + '">' + esc(r.judge) + '</b> ' + esc(r.judgeAt.slice(5, 10).replace('-', '/')) + ' ' + esc(sur(r.judgeBy)) : '';
-    const re = r.judge === '否' ? (r.re ? '<br><b class="go">合</b> ' + esc(r.re.at.slice(5, 10).replace('-', '/')) + '（修理後）' : '<br><span class="ng">修理待ち</span>') : '';
-    return '<td class="res mono">' + esc(r.date ? r.date.slice(5).replace('-', '/') : '') + '</td><td class="res">' + j + re + '</td>';
+    const j = r.judge ? '<span class="pm-jc">' + (r.judgeStamp ? dateStamp(r.judgeStamp.info, r.judgeStamp.date, 38) : '') + '<b class="' + (r.judge === '否' ? 'ng' : 'go') + '">' + pmJ(r.judge) + '</b></span>' : '';
+    const re = r.judge === '否' ? (r.re ? '<span class="pm-jc">' + (r.reStamp ? dateStamp(r.reStamp.info, r.reStamp.date, 38) : '') + '<b class="go">合格</b><small>修理後</small></span>' : '<span class="pm-jc"><span class="ng">修理待ち</span></span>') : '';
+    return '<td class="res mono">' + esc(r.date ? r.date.slice(5).replace('-', '/') : '') + '</td><td class="res pm-jcell">' + j + re + '</td>';
   };
   const people = d.people;
   const body = rows.map((r, i) => '<tr data-row="' + i + '"' + (ed ? '' : ' class="go"') + '><td class="mc"><b>' + esc(r.spec || '') + ' ' + esc(r.no) + '</b><small>No.' + r.formNo + '</small></td>' +
@@ -3672,7 +3678,7 @@ function renderPmPlan() {
     (ed ? '<div class="pm-edit-bar"><b>予定を直しています。</b>月のマスを押すと予定月が移ります。担当者は名前を選び直します。直した内容は変更の記録（設備台帳の変更の記録）に残ります。' +
       '<span class="pm-add"><select id="pmAddNo" aria-label="追加する機械"><option value="">機械を追加…</option>' + d.machines.filter(x => !ed.some(r => r.no === x.no)).map(x => '<option value="' + esc(x.no) + '">' + esc(x.label) + '</option>').join('') + '</select></span>' +
       '<button type="button" class="btn" id="pmCancel">やめる</button><button type="button" class="btn primary" id="pmSaveP">保存する</button></div>'
-      : '<div class="legend pm-legend"><span><i class="s-plan"></i>予定</span><span><i class="s-wait"></i>判定・承認待ち</span><span><i class="s-done"></i>合</span><span><i class="s-ng"></i>否（修理待ち）</span><span><i class="s-late"></i>遅れ</span><span><i class="s-paper"></i>紙で実施</span><span>行を押すと点検記録</span></div>') +
+      : '<div class="legend pm-legend"><span><i class="s-plan"></i>予定</span><span><i class="s-wait"></i>判定・承認待ち</span><span><i class="s-done"></i>合格</span><span><i class="s-ng"></i>不合格（修理待ち）</span><span><i class="s-late"></i>遅れ</span><span><i class="s-paper"></i>紙で実施</span><span>行を押すと点検記録</span></div>') +
     '<div class="tblw"><table class="pm-pl"><thead><tr><th>機種・機番</th><th>担当者</th>' + PM_MONTHS.map(mo => { const ym = (mo >= 6 ? d.fy : d.fy + 1) + '-' + String(mo).padStart(2, '0'); return '<th class="' + (ym === curYm ? 'now' : '') + '">' + mo + '月</th>'; }).join('') + '<th>実施日</th><th>確認・合否</th><th>備考</th></tr></thead><tbody>' + body + '</tbody>' +
     (ed ? '' : '<tfoot><tr><td colspan="2" class="ap-l">社長 月の承認</td>' + ap + '<td colspan="3"></td></tr></tfoot>') + '</table></div>' +
     (ed ? '' : '<section class="ij-aps"><h2>年度の承認（社長）</h2><div class="ij-ap-row">' + yap('年度末承認', d.yearEnd, d.canYearEnd, '年度末', d.yearEnd ? fmtAt(d.yearEnd.at) : '5月の最後の出勤日から') +
