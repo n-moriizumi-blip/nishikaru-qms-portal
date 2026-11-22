@@ -864,6 +864,16 @@ table.bkc{border-collapse:separate;border-spacing:0;width:100%;min-width:1100px}
 .mt-msg-h{display:block;font-size:12px;letter-spacing:.06em}
 .mt-left{display:block;color:var(--ink);font-size:14px;line-height:1.6}
 .mt-left b{color:var(--shu)}
+/* 未入力の知らせ（v0.21.2）：書き始めた機械・区切りだけ */
+.mt td.miss{background:var(--shu-soft)!important;box-shadow:inset 0 0 0 2px var(--shu)}
+.mt td.miss::after{content:attr(data-miss);display:block;margin-top:4px;color:var(--shu);font-size:12px;font-weight:700}
+.item.miss{background:var(--shu-soft);box-shadow:inset 4px 0 0 var(--shu)}
+.item.miss .label::after{content:"　" attr(data-miss);color:var(--shu);font-size:13px;font-weight:700}
+.item.miss .label{display:block}
+.g-pm-r.miss{background:var(--shu-soft);box-shadow:inset 4px 0 0 var(--shu)}
+.g-pm-r.miss .g-pm-no::after{content:attr(data-miss);display:block;color:var(--shu);font-size:12px;font-weight:700}
+.gen-f.miss{background:var(--shu-soft);box-shadow:inset 4px 0 0 var(--shu);padding-left:10px;padding-right:10px;margin:0 -10px}
+.gen-f.miss .gen-lb::after{content:attr(data-miss);display:block;color:var(--shu);font-size:12px;font-weight:700;margin-top:2px}
 </style>
 
 
@@ -933,7 +943,7 @@ img.rail-mark.qms-icon{background:transparent;object-fit:contain;padding:0}
 <div class="busy" id="busy" hidden><span>処理中…</span></div>
 
 <script>
-window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.21.1" };
+window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.21.2" };
 var qmsToken = null, qmsStarted = false;
 // IDトークンの中身はUTF-8（表示用だけに使う。だれかの判定はGAS側でトークンを確かめて得たメールだけを使う）
 function qmsDecode_(str){
@@ -1631,7 +1641,30 @@ function mtRefresh(mcNo, itemNo) {
   mtWire();
   mtAlerts();
 }
+// 書き始めた機械だけ、まだの欄に「未入力」（v0.21.2）
+function mtStarted(mc) {
+  const s = S.msel[mc.no]; if (!s) return false;
+  return Object.keys(s.marks).some(k => !mtItem(S.multi.items.find(x => String(x.no) === k) || {}, mc).fixed) || Object.keys(s.nums).length > 0 || !!String(s.note).trim();
+}
+function mtMiss() {
+  const d = S.multi; if (!d) return;
+  d.machines.forEach(mc => {
+    const s = S.msel[mc.no], on = !!s && mtStarted(mc);
+    d.items.forEach(it0 => {
+      const td = document.querySelector('[data-cell="' + String(mc.no + '-' + it0.no).replace(/"/g, '\\"') + '"]'); if (!td) return;
+      const it = mtItem(it0, mc);
+      let miss = '';
+      if (on && !isDoItem(it) && !it.fixed) {
+        const mk = s.marks[it.no];
+        if (!mk) miss = '未入力';
+        else if (isNumItem(it) && mk !== '／' && mk !== '━' && !judgeNum(it, s.nums[it.no])) miss = '数値が未入力';
+      }
+      td.classList.toggle('miss', !!miss); if (miss) td.dataset.miss = miss; else delete td.dataset.miss;
+    });
+  });
+}
 function mtAlerts() {
+  mtMiss();
   const any = Object.values(S.msel).some(s => Object.values(s.marks).indexOf('×') >= 0);
   const x = $('#mtX'); if (x) x.hidden = !any;
   document.querySelectorAll('.mt-note').forEach(t => {
@@ -1797,7 +1830,7 @@ function renderGroupDaily() {
   const perRows = it => {
     const tg = gTargets(it);
     if (!tg.length) return '<span class="g-slash">' + (grpKind(it) === 'perx' ? '砥石を交換しない日は ／（自動）' : '先に「使用した機種」を選んでください') + '</span>';
-    return '<div class="g-pm">' + tg.map(n => '<div class="g-pm-r"><span class="g-pm-no"><b>' + esc(n) + '</b><small>' + esc(gName(n)) + '</small></span><div class="g-ctrl">' +
+    return '<div class="g-pm">' + tg.map(n => '<div class="g-pm-r' + (!locked && !(s.per[it.no] || {})[n] ? ' miss" data-miss="未入力' : '') + '"><span class="g-pm-no"><b>' + esc(n) + '</b><small>' + esc(gName(n)) + '</small></span><div class="g-ctrl">' +
       GMARKS.map(m => '<button type="button" class="mark ' + m[2] + '" data-gi="' + it.no + '" data-no="' + esc(n) + '" data-m="' + m[0] + '" aria-pressed="' + ((s.per[it.no] || {})[n] === m[0]) + '"' + dis + '><b>' + m[0] + '</b><small>' + m[1] + '</small></button>').join('') + '</div></div>').join('') + '</div>';
   };
   let body = '', lastGrp = '';
@@ -1984,7 +2017,7 @@ function renderDaily() {
     c.querySelectorAll('.mark').forEach(x => x.setAttribute('aria-pressed', x === b));
     refreshAlerts();
   }));
-  $('#v-entry').querySelectorAll('.num input').forEach(inp => inp.addEventListener('input', () => { S.sel.nums[inp.dataset.no] = inp.value; validateNum(inp.dataset.no, true); }));
+  $('#v-entry').querySelectorAll('.num input').forEach(inp => inp.addEventListener('input', () => { S.sel.nums[inp.dataset.no] = inp.value; validateNum(inp.dataset.no, true); dayMiss(); }));
   $('#note').addEventListener('input', e => { S.sel.note = e.target.value; });
   $('#allOk').addEventListener('click', () => { checkItems().filter(it => !isDoItem(it) && !it.fixed).forEach(it => { S.sel.marks[it.no] = 'レ'; }); renderDaily(); toast('すべて「問題なし」にしました。違うところだけ直してください'); });
   $('#restBtn').addEventListener('click', async () => { const r = await restDay(f.no, d.machine.no, sel.date); if (!r) return; toast('休みとして記録しました'); await openDaily(f.no, d.machine.no, d.ym, sel.date, r.sheet); boot(true); });
@@ -2023,7 +2056,24 @@ function validateNum(no, typed) {
     }
   }
 }
+// 書き始めた日だけ、まだの項目に「未入力」（v0.21.2）
+function dayMiss() {
+  const items = checkItems(), sel = S.sel;
+  const on = items.some(it => !it.fixed && sel.marks[it.no]) || Object.keys(sel.nums || {}).some(k => String(sel.nums[k]).trim());
+  items.forEach(it => {
+    const c = document.querySelector('.ctrl[data-no="' + it.no + '"]'); if (!c) return;
+    const box = c.closest('.item');
+    let miss = '';
+    if (on && !it.fixed && !isDoItem(it)) {
+      const mk = sel.marks[it.no];
+      if (!mk) miss = '未入力';
+      else if (isNumItem(it) && mk !== '／' && mk !== '━' && !judgeNum(it, sel.nums[it.no])) miss = '数値が未入力';
+    }
+    box.classList.toggle('miss', !!miss); if (miss) box.dataset.miss = miss; else delete box.dataset.miss;
+  });
+}
 function refreshAlerts() {
+  dayMiss();
   const v = Object.values(S.sel.marks);
   const xa = $('#xAlert'); if (xa) xa.hidden = v.indexOf('×') < 0;
   const n = $('#note'); if (n) n.classList.toggle('need', v.indexOf('×') >= 0 || v.indexOf('△') >= 0);
@@ -2280,6 +2330,8 @@ function genUpdate() {
   const lis = [];
   secs.forEach(([t, items], i) => {
     const req = items.filter(it => it.required === 'はい'), done = req.filter(genFilled).length;
+    const started = items.some(genFilled);
+    items.forEach(it => { const el = document.querySelector('.gen-f[data-item="' + it.no + '"]'); if (el) { const miss = started && it.required === 'はい' && !genFilled(it); el.classList.toggle('miss', miss); if (miss) el.dataset.miss = '未入力'; else delete el.dataset.miss; } });
     const c = $('#gsc' + i); if (c) { c.textContent = done === req.length ? '✔ 入力済み' : '残り ' + (req.length - done) + '項目'; c.className = done === req.length ? 'done' : ''; }
     req.forEach(it => {
       const ok = genFilled(it); if (!ok) left++;
@@ -3150,9 +3202,9 @@ function renderIjou() {
       fld(IJ.machine, '機種／機番', '<input type="text" id="ij' + IJ.machine + '" list="ijMc" value="' + esc(v[IJ.machine] || '') + '" placeholder="例：B12Ⅵ N 80号機"><datalist id="ijMc">' + d.machines.map(x => '<option value="' + esc(x) + '">').join('') + '</datalist>') +
       fld(IJ.what, '異常内容', txt(IJ.what, '例：主軸から異音。回転数を上げると大きくなる'), v[IJ.src] ? '点検の備考から入りました。直せます' : '')) +
     sec(1, '対処', fld(IJ.fixDate, '対処日', date(IJ.fixDate)) + fld(IJ.fix, '対処内容', txt(IJ.fix, '例：メーカーに修理を依頼。主軸ベアリングを交換')) + fld(IJ.prevent, '再発防止策', txt(IJ.prevent, '例：主軸の異音を始業前点検に入れる'))) +
-    sec(2, '異常前の品の検査（5個・全数全箇所）', '<div class="gen-f"><span class="gen-lb">判定</span><div class="gen-c">' + judge(IJ.before) + '<div class="ij-rule" id="ijr' + IJ.before + '"></div></div></div>' +
+    sec(2, '異常前の品の検査（5個・全数全箇所）', '<div class="gen-f" data-item="' + IJ.before + '"><span class="gen-lb">判定</span><div class="gen-c">' + judge(IJ.before) + '<div class="ij-rule" id="ijr' + IJ.before + '"></div></div></div>' +
       '<div id="ijw' + IJ.beforeFix + '">' + fld(IJ.beforeFix, '否のときの対処内容', txt(IJ.beforeFix, '例：全数ロットアウト（120個）')) + '</div>') +
-    sec(3, '復旧後の品の検査（5個・全数全箇所）', '<div class="gen-f"><span class="gen-lb">判定</span><div class="gen-c">' + judge(IJ.after) + '<div class="ij-rule" id="ijr' + IJ.after + '"></div></div></div>' +
+    sec(3, '復旧後の品の検査（5個・全数全箇所）', '<div class="gen-f" data-item="' + IJ.after + '"><span class="gen-lb">判定</span><div class="gen-c">' + judge(IJ.after) + '<div class="ij-rule" id="ijr' + IJ.after + '"></div></div></div>' +
       '<div id="ijw' + IJ.afterFix + '">' + fld(IJ.afterFix, '否のときの対処内容', txt(IJ.afterFix, '例：メーカーに再度連絡。11/25に再調整の予定')) + '</div>') +
     '</form><aside class="gen-side" aria-label="提出の前に">' +
     '<div class="gen-box"><h2>提出の前に</h2><ul class="gen-chk" id="ijChk"></ul></div>' +
@@ -3185,6 +3237,11 @@ function ijUpdate() {
     if (w) w.hidden = v[no] !== '否';
     if (r) { r.className = 'ij-rule' + (v[no] === '否' ? ' ng' : ''); r.textContent = v[no] === '否' ? (no === IJ.before ? '「否」なので全数ロットアウトです。対処内容を書いてください。' : '「否」なので機械メーカーに再度連絡し、対処内容を書いてください。') : no === IJ.before ? '「否」のときは全数ロットアウト。対処内容を書きます。' : '「否」のときは機械メーカーに再度連絡。対処内容を書きます。'; }
   });
+  // 書き始めた区切りだけ、まだの欄に「未入力」（v0.21.2）
+  const secOf = { [IJ.date]: 0, [IJ.person]: 0, [IJ.machine]: 0, [IJ.what]: 0, [IJ.fixDate]: 1, [IJ.fix]: 1, [IJ.prevent]: 1, [IJ.before]: 2, [IJ.beforeFix]: 2, [IJ.after]: 3, [IJ.afterFix]: 3 };
+  const started = i => Object.keys(secOf).some(no => secOf[no] === i && v[no]);
+  Object.keys(secOf).forEach(no => { const el = document.querySelector('#ijForm .gen-f[data-item="' + no + '"]'); if (!el) return; const miss = started(secOf[no]) && miss0(+no); el.classList.toggle('miss', miss); if (miss) el.dataset.miss = '未入力'; else delete el.dataset.miss; });
+  function miss0(no) { return miss.some(x => x[0] === no); }
   for (let i = 0; i < 4; i++) { const c = $('#ijsc' + i), n = miss.filter(x => x[2] === i).length; if (c) { c.textContent = n ? '残り ' + n + '項目' : '✔ 入力済み'; c.className = n ? '' : 'done'; } }
   const all = [[IJ.date, '発生（日・担当者・機番・内容）', 0], [IJ.fixDate, '対処（日・内容・再発防止策）', 1], [IJ.before, '異常前の品の検査', 2], [IJ.after, '復旧後の品の検査', 3]];
   $('#ijChk').innerHTML = all.map(([no, name, i]) => { const ok = !miss.some(x => x[2] === i); return '<li class="' + (ok ? 'ok' : 'no') + '"><i>' + (ok ? '✔' : '！') + '</i><a href="#ijs' + i + '" data-go="' + i + '">' + esc(name) + '</a></li>'; }).join('');
