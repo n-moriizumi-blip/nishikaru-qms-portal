@@ -821,6 +821,12 @@ table.bkc{border-collapse:separate;border-spacing:0;width:100%;min-width:1100px}
 .status.s4 .days i:focus-visible{outline:3px solid var(--ai);outline-offset:1px}
 .status.s4 .st-info{grid-column:1/-1;background:var(--paper);border-left:4px solid var(--ai);padding:8px 12px;font-size:14px;line-height:1.6;cursor:default}
 .status.s4 .st-info[hidden]{display:none}
+/* 休みボタン（v0.20.0） */
+.head-btns{display:flex;gap:8px;flex-wrap:wrap}
+.btn.rest-btn{border-style:dashed}
+.sheet .rest{display:inline-block;font-weight:700;color:var(--ai);font-size:12px}
+.mt-hb button.rest{border-style:dashed}
+.bkc td.d .r{background:#E3EAF2;color:var(--ai)}
 </style>
 
 
@@ -890,7 +896,7 @@ img.rail-mark.qms-icon{background:transparent;object-fit:contain;padding:0}
 <div class="busy" id="busy" hidden><span>処理中…</span></div>
 
 <script>
-window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.19.1" };
+window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.20.0" };
 var qmsToken = null, qmsStarted = false;
 // IDトークンの中身はUTF-8（表示用だけに使う。だれかの判定はGAS側でトークンを確かめて得たメールだけを使う）
 function qmsDecode_(str){
@@ -1472,6 +1478,7 @@ function mtCheck(mc) {
 function mtReady(mc) { const c = mtCheck(mc); return mtEditable(mc) && !c.left && !c.why; }
 function mtChip(mc) {
   if (mc.locked) return '<span class="mt-chip done">承認済み</span>';
+  if (mc.entered && mc.rest) return '<span class="mt-chip done">休み（記録済み）</span>';
   if (mc.entered) return '<span class="mt-chip done">✔ 提出済み' + (mc.confirmed ? '・確認済み' : '') + '</span>';
   const c = mtCheck(mc);
   if (c.left) return '<span class="mt-chip todo">残り ' + c.left + '項目</span>';
@@ -1510,7 +1517,7 @@ function mtCellInner(mc, it0) {
 function mtHead(mc) {
   const ed = mtEditable(mc);
   return '<span class="mt-ml">' + esc(mc.label) + '</span>' + mtChip(mc) +
-    '<div class="mt-hb">' + (ed ? '<button type="button" data-ok="' + esc(mc.no) + '">すべて問題なし</button><button type="button" class="o" data-nr="' + esc(mc.no) + '">稼働なし</button>'
+    '<div class="mt-hb">' + (ed ? '<button type="button" data-ok="' + esc(mc.no) + '">すべて問題なし</button><button type="button" class="o" data-nr="' + esc(mc.no) + '">稼働なし</button><button type="button" class="o rest" data-rest="' + esc(mc.no) + '" title="担当者が有給などで休みの日">休み</button>'
       : mc.locked ? '' : '<button type="button" class="o" data-fix="' + esc(mc.no) + '">1台の画面で直す</button>') + '</div>';
 }
 function mtBar() {
@@ -1525,7 +1532,7 @@ function renderMulti() {
   const th = d.machines.map((mc, i) => '<th scope="col" class="c' + (i % 2) + '" data-head="' + esc(mc.no) + '">' + mtHead(mc) + '</th>').join('');
   const rows = d.items.map(it => '<tr><th scope="row">' + esc(it.name.replace(/（.*$/, '')) + (/（/.test(it.name) ? '<small>' + esc((it.name.match(/（(.*)）/) || [])[1] || '') + '</small>' : '') + '</th>' +
     d.machines.map((mc, i) => '<td class="c' + (i % 2) + '" data-cell="' + esc(mc.no) + '-' + it.no + '">' + mtCellInner(mc, it) + '</td>').join('') + '</tr>').join('') +
-    '<tr><th scope="row">備考<small>△・×のときは内容を書く</small></th>' + d.machines.map((mc, i) => '<td class="c' + (i % 2) + '"><textarea class="mt-note" id="mtn-' + esc(mc.no) + '" data-note="' + esc(mc.no) + '" rows="2" placeholder="例：エアー圧が低めだったため調整した"' + (mtEditable(mc) ? '' : ' disabled') + '>' + esc(mtEditable(mc) ? S.msel[mc.no].note : mc.note) + '</textarea></td>').join('') + '</tr>' +
+    '<tr><th scope="row">備考<small>△・×のときは内容を書く</small></th>' + d.machines.map((mc, i) => '<td class="c' + (i % 2) + '"><textarea class="mt-note" id="mtn-' + esc(mc.no) + '" data-note="' + esc(mc.no) + '" rows="2" placeholder="' + esc(notePh(d.form.no)) + '"' + (mtEditable(mc) ? '' : ' disabled') + '>' + esc(mtEditable(mc) ? S.msel[mc.no].note : mc.note) + '</textarea></td>').join('') + '</tr>' +
     '<tr><th scope="row">担当者</th>' + d.machines.map((mc, i) => '<td class="c' + (i % 2) + ' mt-by">' + esc(mc.entered ? mc.by : mtEditable(mc) ? d.me + '（自動）' : '') + '</td>').join('') + '</tr>';
   $('#v-entry').innerHTML =
     '<div class="mt-top"><div><div class="eyebrow">記入する ・ ' + esc(f.name) + '</div>' +
@@ -1614,6 +1621,7 @@ function mtWire() {
     toast(n ? '範囲外の数値の項目以外を「問題なし」にしました。範囲外の項目は△か×を選んでください' : 'すべて「問題なし」にしました。違うところだけ直してください');
   });
   v.querySelectorAll('[data-nr]').forEach(b => b.onclick = () => { mtNoRun(b.dataset.nr); renderMulti(); });
+  v.querySelectorAll('[data-rest]').forEach(b => b.onclick = () => mtRest(b.dataset.rest));
   v.querySelectorAll('[data-fix]').forEach(b => b.onclick = () => openDaily(d.form.no, b.dataset.fix, d.ym, d.date));
   v.querySelectorAll('.mt-note').forEach(t => t.oninput = () => { if (S.msel[t.dataset.note]) { S.msel[t.dataset.note].note = t.value; mtRefresh(t.dataset.note); } });
   v.querySelectorAll('[data-day]').forEach(b => b.onclick = () => mtGo(b.dataset.day));
@@ -1632,6 +1640,17 @@ function mtGo(date) {
   if (mtDirty() && !S.mtLeave) { S.mtLeave = true; toast('提出していない入力があります。別の日を開くと消えます。もう一度押すと移動します', true); setTimeout(() => { S.mtLeave = false; }, 4000); return; }
   S.mtLeave = false;
   openMulti(S.multi.form.no, date);
+}
+// 1台だけ休みとして記録（ほかの機械の入力途中はそのまま残す）
+async function mtRest(no) {
+  const d = S.multi;
+  if (!window.confirm(REST_ASK(d.date))) return;
+  const keep = {}; d.machines.filter(mc => mtEditable(mc) && mc.no !== no).forEach(mc => { keep[mc.no] = S.msel[mc.no]; });
+  try { await run('saveDailyBatch', [{ formNo: d.form.no, machineNo: no, date: d.date, rest: true }], S.asEmail); } catch (e) { return; }
+  toast('休みとして記録しました');
+  await openMulti(d.form.no, d.date);
+  if (S.multi) { Object.keys(keep).forEach(k => { if (S.msel[k]) S.msel[k] = keep[k]; }); renderMulti(); }
+  boot(true);
 }
 async function mtSubmit() {
   const d = S.multi, list = d.machines.filter(mtReady).map(mc => {
@@ -1738,20 +1757,22 @@ function renderGroupDaily() {
     '<div class="entry-grid"><form class="panel" id="gForm" novalidate>' +
     '<div class="panel-head"><label class="picker" for="dateSel" style="color:var(--ink)"><span class="eyebrow">記入する日</span><select id="dateSel">' +
     ymDays.slice().reverse().map(x => '<option value="' + x + '"' + (x === s.date ? ' selected' : '') + '>' + jpDate(x) + (d.days[x] ? '　記入済み' : isWorkday(x) ? '' : '　休日') + '</option>').join('') + '</select></label>' +
-    (locked ? '' : '<button type="button" class="btn" id="gAllOk"' + (s.noRun || !s.used.length ? ' disabled' : '') + '>すべて「問題なし」にする</button>') + '</div>' +
+    (locked ? '' : '<div class="head-btns"><button type="button" class="btn" id="gAllOk"' + (s.noRun || !s.used.length ? ' disabled' : '') + '>すべて「問題なし」にする</button><button type="button" class="btn rest-btn" id="restBtn" title="担当者が有給などで休みの日">休み</button></div>') + '</div>' +
+    ((d.days[s.date] || {}).rest ? '<div class="info">この日は「休み」として記録されています（担当者の欄は「休」、確認・承認はいりません）。点検した日なら、記入し直して提出してください。</div>' : '') +
     (conf ? '<div class="info">この日は ' + esc(conf.by) + ' さんが確認済みです。直すと、確認をやり直してもらうことになります。</div>' : '') +
     body +
     '<div class="alert" id="xAlert"' + (S.daily.items.some(it => /^per/.test(grpKind(it)) && Object.values(s.per[it.no] || {}).indexOf('×') >= 0) ? '' : ' hidden') + '><b>×（要修理）があります。</b>「設備異常アクション手順」に従い、設備異常記録台帳にも記入してください。</div>' +
-    '<div class="notes"><label for="note"><b>備考</b>　<small style="color:var(--muted)">△・×をつけたときは内容を書いてください</small></label><textarea id="note"' + dis + ' class="' + (gBad().length && !String(s.note).trim() ? 'need' : '') + '" placeholder="例：71号機 回転部から異音、ベルトを調整した">' + esc(s.note) + '</textarea></div>' +
+    '<div class="notes"><label for="note"><b>備考</b>　<small style="color:var(--muted)">△・×をつけたときは内容を書いてください</small></label><textarea id="note"' + dis + ' class="' + (gBad().length && !String(s.note).trim() ? 'need' : '') + '" placeholder="' + esc(notePh(f.no, d.members)) + '">' + esc(s.note) + '</textarea></div>' +
     (locked ? '' : '<div class="submit-bar"><small class="g-left">' + (left.length ? 'まだ：' + esc(left.join('、')) : '担当者：' + esc(d.me) + '（自動で入ります）') + '</small><button type="submit" class="btn primary big"' + (left.length ? ' disabled' : '') + '>提出する</button></div>') +
     '</form><div class="panel"><div class="panel-head"><h2>' + esc(d.machine.label) + '　' + esc(d.ym) + '</h2><small style="color:var(--muted)">日付をタップすると、その日を開きます</small></div><div class="sheet-wrap"><table class="sheet" id="sheet"></table></div>' +
-    '<div class="rules"><div><b>レ</b> 使った機械すべて問題なし　<b>△71</b> 71号機を調整した　<b>×</b> 要修理　<b>━</b> 設備なし　<b>／</b> 休日・稼働なし・その日はしていない</div><div>使用した機種の行の ○ は、その日に使った機械</div>' +
+    '<div class="rules"><div><b>レ</b> 使った機械すべて問題なし　<b>△' + esc((d.members[0] ? d.members[0].no : '')) + '</b> ' + esc((d.members[0] ? d.members[0].no : '')) + '号機を調整した　<b>×</b> 要修理　<b>━</b> 設備なし　<b>／</b> 休日・稼働なし・その日はしていない　<b>休</b> 担当者が休み</div><div>使用した機種の行の ○ は、その日に使った機械</div>' +
     '<div>確認：' + esc(d.route.checker || '―') + '（管理監督者）　承認：' + esc(d.route.approver || '―') + '（' + esc(d.route.timing) + '）</div>' +
     (d.notes || []).map(n => '<div>' + (n.head ? '<b>' + esc(n.head) + '</b> ' : '') + esc(n.text) + '</div>').join('') + '</div></div></div>';
   renderSheet();
   $('#ymSel').addEventListener('change', e => { if (e.target.value) openDaily(f.no, d.machine.no, e.target.value); });
   $('#dateSel').addEventListener('change', e => { loadDay(e.target.value); renderDaily(); });
   if (locked) return;
+  $('#restBtn').addEventListener('click', async () => { const r = await restDay(f.no, d.machine.no, s.date); if (!r) return; toast('休みとして記録しました'); await openDaily(f.no, d.machine.no, d.ym, s.date, r.sheet); boot(true); });
   const v = $('#v-entry');
   const toggle = (list, no) => { const i = list.indexOf(no); if (i >= 0) list.splice(i, 1); else list.push(no); list.sort(); };
   v.querySelectorAll('[data-gk]').forEach(b => b.addEventListener('click', () => {
@@ -1860,14 +1881,15 @@ function renderDaily() {
     '<div class="entry-grid"><form class="panel" id="dayForm" novalidate>' +
     '<div class="panel-head"><label class="picker" for="dateSel" style="color:var(--ink)"><span class="eyebrow">記入する日</span><select id="dateSel">' +
     ymDays.slice().reverse().map(x => '<option value="' + x + '"' + (x === sel.date ? ' selected' : '') + '>' + jpDate(x) + (d.days[x] ? '　記入済み' : isWorkday(x) ? '' : '　休日') + '</option>').join('') + '</select></label>' +
-    (locked ? '' : '<button type="button" class="btn" id="allOk">すべて「問題なし」にする</button>') + '</div>' +
+    (locked ? '' : '<div class="head-btns"><button type="button" class="btn" id="allOk">すべて「問題なし」にする</button><button type="button" class="btn rest-btn" id="restBtn" title="担当者が有給などで休みの日">休み</button></div>') + '</div>' +
+    ((d.days[sel.date] || {}).rest ? '<div class="info">この日は「休み」として記録されています（担当者の欄は「休」、確認・承認はいりません）。点検した日なら、記入し直して提出してください。</div>' : '') +
     (conf ? '<div class="info">この日は ' + esc(conf.by) + ' さんが確認済みです。直すと、確認をやり直してもらうことになります。</div>' : '') +
     items +
     '<div class="alert" id="xAlert" hidden><b>×（要修理）があります。</b>「設備異常アクション手順」に従い、設備異常記録台帳にも記入してください。</div>' +
-    '<div class="notes"><label for="note"><b>' + esc(noteItem ? noteItem.name : '備考') + '</b>　<small style="color:var(--muted)">△・×をつけたときは内容を書いてください</small></label><textarea id="note"' + (locked ? ' disabled' : '') + ' placeholder="例：エアー圧が低めだったため調整した">' + esc(sel.note) + '</textarea></div>' +
+    '<div class="notes"><label for="note"><b>' + esc(noteItem ? noteItem.name : '備考') + '</b>　<small style="color:var(--muted)">△・×をつけたときは内容を書いてください</small></label><textarea id="note"' + (locked ? ' disabled' : '') + ' placeholder="' + esc(notePh(f.no)) + '">' + esc((d.days[sel.date] || {}).rest ? '' : sel.note) + '</textarea></div>' +
     (locked ? '' : '<div class="submit-bar"><small>担当者：' + esc(d.me) + '（自動で入ります）</small><div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn" id="noRun">この日は稼働なし（／）</button><button type="submit" class="btn primary big">提出する</button></div></div>') +
     '</form><div class="panel"><div class="panel-head"><h2>' + esc(d.machine.label) + '　' + esc(d.ym) + '</h2><small style="color:var(--muted)">日付をタップすると、その日を開きます</small></div><div class="sheet-wrap"><table class="sheet" id="sheet"></table></div>' +
-    '<div class="rules"><div><b>レ</b> 確認済・問題なし　<b>△</b> 調整・修理した　<b>×</b> メーカー修理などが必要　<b>／</b> 休日・稼働なし　<b>━</b> その設備がない</div>' +
+    '<div class="rules"><div><b>レ</b> 確認済・問題なし　<b>△</b> 調整・修理した　<b>×</b> メーカー修理などが必要　<b>／</b> 休日・稼働なし　<b>━</b> その設備がない　<b>休</b> 担当者が休み</div>' +
     '<div>確認：' + esc(d.route.checker || '―') + '（管理監督者）　承認：' + esc(d.route.approver || '―') + '（' + esc(d.route.timing) + '）</div>' +
     (d.notes || []).map(n => '<div>' + (n.head ? '<b>' + esc(n.head) + '</b> ' : '') + esc(n.text) + '</div>').join('') +
     '</div></div></div>';
@@ -1894,6 +1916,7 @@ function renderDaily() {
   $('#v-entry').querySelectorAll('.num input').forEach(inp => inp.addEventListener('input', () => { S.sel.nums[inp.dataset.no] = inp.value; validateNum(inp.dataset.no, true); }));
   $('#note').addEventListener('input', e => { S.sel.note = e.target.value; });
   $('#allOk').addEventListener('click', () => { checkItems().filter(it => !isDoItem(it) && !it.fixed).forEach(it => { S.sel.marks[it.no] = 'レ'; }); renderDaily(); toast('すべて「問題なし」にしました。違うところだけ直してください'); });
+  $('#restBtn').addEventListener('click', async () => { const r = await restDay(f.no, d.machine.no, sel.date); if (!r) return; toast('休みとして記録しました'); await openDaily(f.no, d.machine.no, d.ym, sel.date, r.sheet); boot(true); });
   $('#noRun').addEventListener('click', () => { checkItems().forEach(it => { if (it.fixed) return; if (isDoItem(it)) delete S.sel.marks[it.no]; else S.sel.marks[it.no] = '／'; }); S.sel.nums = {}; submitDay('稼働なしとして記録しました'); });
   $('#dayForm').addEventListener('submit', e => { e.preventDefault(); submitDay('提出しました'); });
 }
@@ -1957,6 +1980,17 @@ async function submitDay(msg) {
   await openDaily(d.form.no, d.machine.no, d.ym, sel.date, r.sheet);
   boot(true);
 }
+// 休み（担当者が休み）：その日の項目と管理監督者欄は ／、担当者欄は「休」。確認・承認はいらない（v0.20.0）
+const REST_ASK = date => jpDate(date) + ' を「休み」として記録します。\n点検の項目と管理監督者の欄は ／、担当者の欄は「休」になり、確認・承認はいりません。よろしいですか？';
+async function restDay(formNo, machineNo, date) {
+  if (!window.confirm(REST_ASK(date))) return null;
+  try { return await run('saveDaily', { formNo: formNo, machineNo: machineNo, date: date, rest: true }, S.asEmail); } catch (e) { return null; }
+}
+// 備考の例（帳票ごと）
+function notePh(formNo, members) {
+  if (members && members.length) return '例：' + members[0].no + '号機 回転部から異音、ベルトを調整した';
+  return Number(formNo) === 11 ? '例：エアー圧が低めだったため調整した' : '例：異音がしたため、ベルトを調整した';
+}
 function renderSheet(ro, unc, onPick) {
   unc = unc || {};
   const d = S.daily, days = daysOf(d.ym), items = checkItems();
@@ -1973,7 +2007,7 @@ function renderSheet(ro, unc, onPick) {
       const rowsG = grpKind(it) === 'used' ? d.members.map(mm => ['使用：' + mm.no + ' ' + mm.name, mm.no]) : [[it.name.replace(/（.*$/, ''), '']];
       rowsG.forEach(([label, member]) => {
         h += '<tr><th class="it" title="' + esc(it.name) + '">' + esc(label) + '</th>' + days.map(x => {
-          const v = offSlash(x) ? '／' : gCell(it, (d.days[x] || { marks: {} }).marks[it.no], member);
+          const v = offSlash(x) || (d.days[x] || {}).rest ? '／' : gCell(it, (d.days[x] || { marks: {} }).marks[it.no], member);
           return '<td class="' + (x === S.sel.date ? 'sel ' : '') + (isWorkday(x) ? '' : 'we ') + (offSlash(x) ? 'sl ' : '') + (/×/.test(v) ? 'x ' : /△/.test(v) ? 'tri ' : '') + (/\d/.test(v) ? 'gno' : '') + '">' + esc(v) + '</td>';
         }).join('') + '</tr>';
       });
@@ -1987,8 +2021,8 @@ function renderSheet(ro, unc, onPick) {
       return '<td class="' + cls + (offSlash(x) ? ' sl' : '') + '">' + (offSlash(x) ? '／' : esc(val)) + '</td>';
     }).join('') + '</tr>';
   });
-  h += '<tr><th class="it">担当者</th>' + days.map(x => '<td class="' + (x === S.sel.date ? 'sel ' : '') + (isWorkday(x) ? '' : 'we') + '">' + (d.days[x] ? hankoImg((d.stamps || {})[d.days[x].by], d.days[x].by, 18) : offSlash(x) ? '<span class="sl">／</span>' : '') + '</td>').join('') + '</tr>';
-  h += '<tr><th class="it">管理監督者</th>' + days.map(x => '<td class="ok ' + (unc[x] ? 'unc ' : '') + (x === S.sel.date ? 'sel ' : '') + (isWorkday(x) ? '' : 'we') + '">' + (d.confirmed[x] ? hankoImg((d.stamps || {})[d.confirmed[x].by], d.confirmed[x].by, 18) : offSlash(x) ? '<span class="sl">／</span>' : '') + '</td>').join('') + '</tr></tbody>';
+  h += '<tr><th class="it">担当者</th>' + days.map(x => '<td class="' + (x === S.sel.date ? 'sel ' : '') + (isWorkday(x) ? '' : 'we') + '">' + (d.days[x] && d.days[x].rest ? '<span class="rest">休</span>' : d.days[x] ? hankoImg((d.stamps || {})[d.days[x].by], d.days[x].by, 18) : offSlash(x) ? '<span class="sl">／</span>' : '') + '</td>').join('') + '</tr>';
+  h += '<tr><th class="it">管理監督者</th>' + days.map(x => '<td class="ok ' + (unc[x] ? 'unc ' : '') + (x === S.sel.date ? 'sel ' : '') + (isWorkday(x) ? '' : 'we') + '">' + (d.confirmed[x] ? hankoImg((d.stamps || {})[d.confirmed[x].by], d.confirmed[x].by, 18) : offSlash(x) || (d.days[x] || {}).rest ? '<span class="sl">／</span>' : '') + '</td>').join('') + '</tr></tbody>';
   $('#sheet').innerHTML = h;
   $('#sheet').querySelectorAll('[data-day]').forEach(th => th.addEventListener('click', () => { if (onPick) { onPick(th.dataset.day); return; } loadDay(th.dataset.day); renderDaily(); }));
 }
@@ -2313,7 +2347,8 @@ async function searchNow() {
 // 月のまとめ：記入日数・稼働なし・△×範囲外の日と備考・管理監督者の確認
 function monthSummaryHtml() {
   const d = S.daily, dates = Object.keys(d.days).sort(), items = checkItems();
-  const noRun = dates.filter(x => items.filter(it => !isDoItem(it)).every(it => (d.days[x].marks[it.no] || {}).mark === '／'));
+  const rest = dates.filter(x => d.days[x].rest);
+  const noRun = dates.filter(x => !d.days[x].rest && items.filter(it => !isDoItem(it)).every(it => (d.days[x].marks[it.no] || {}).mark === '／'));
   const issues = dates.map(x => {
     const day = d.days[x];
     const what = items.map(it => {
@@ -2323,14 +2358,14 @@ function monthSummaryHtml() {
     }).filter(String);
     return what.length ? { date: x, what: what, note: day.note } : null;
   }).filter(Boolean);
-  const unconf = dates.filter(x => !d.confirmed[x]);
+  const unconf = dates.filter(x => !d.confirmed[x] && !d.days[x].rest);
   const until = d.today && d.today.slice(0, 7) === d.ym ? d.today : '9999-12-31';
   const work = daysOf(d.ym).filter(x => x <= until && isWorkday(x));
   const blank = work.filter(x => !d.days[x]);
   const offEntered = dates.filter(x => !isWorkday(x));
   return '<div class="msum"><h3>この月のまとめ（' + esc(d.ym) + '）</h3><dl>' +
     '<dt>出勤日（会社カレンダー）</dt><dd>' + work.length + '日' + (until !== '9999-12-31' ? '（今日まで）' : '') + '</dd>' +
-    '<dt>記入した日</dt><dd>' + dates.length + '日（うち稼働なし ' + noRun.length + '日' + (offEntered.length ? '、休みの日の記入 ' + offEntered.length + '日' : '') + '）</dd>' +
+    '<dt>記入した日</dt><dd>' + dates.length + '日（うち稼働なし ' + noRun.length + '日' + (rest.length ? '、休み ' + rest.length + '日' : '') + (offEntered.length ? '、休みの日の記入 ' + offEntered.length + '日' : '') + '）</dd>' +
     '<dt>記入がない日</dt><dd>' + (blank.length ? '<b class="ng">' + blank.length + '日分</b>（出勤日なのに記入がない日）<br><small>' + blank.map(x => esc(x.slice(5, 7) + '月' + x.slice(8) + '日')).join('、') + '</small>' : 'なし（出勤日はすべて記入あり）') + '</dd>' +
     '<dt>管理監督者の確認</dt><dd>' + (unconf.length ? '<b class="ng">未確認 ' + unconf.length + '日</b>' : '全日確認済み') + '</dd>' +
     '<dt>△・×・範囲外</dt><dd>' + (issues.length ? '<ul>' + issues.map(x => '<li><button class="linkbtn" data-jump="' + x.date + '">' + x.date.slice(5, 7) + '月' + x.date.slice(8) + '日</button>　' + esc(x.what.join('、')) + (x.note ? '<br><small>備考：' + esc(x.note) + '</small>' : '') + '</li>').join('') + '</ul>' : 'なし') + '</dd></dl></div>';
@@ -2543,8 +2578,8 @@ function bkcRender(d, rows) {
   const ds = n => ym + '-' + String(n).padStart(2, '0');
   const off = d.offDays || [];
   const wdC = n => { const w = new Date(ds(n) + 'T00:00:00').getDay(); return (off.indexOf(ds(n)) >= 0 ? 'we ' : '') + (w === 6 ? 'sat' : w === 0 ? 'sun' : ''); };
-  const SYM = { k: 'レ', t: '△', x: '×', n: '／', m: '', o: '・', ' ': '' };
-  const TIP = { k: '問題なし', t: '△・範囲外・備考あり', x: '×（要修理）', n: '稼働なし', m: '記入なし', o: '休み', ' ': '' };
+  const SYM = { k: 'レ', t: '△', x: '×', n: '／', m: '', o: '・', r: '休', ' ': '' };
+  const TIP = { k: '問題なし', t: '△・範囲外・備考あり', x: '×（要修理）', n: '稼働なし', m: '記入なし', o: '休み', r: '担当者が休み', ' ': '' };
   let h = '<thead><tr><th class="bkc-mc">機械</th><th class="bkc-st">状態</th>' + days.map(n => '<th class="' + wdC(n) + '">' + n + '</th>').join('') + '</tr></thead><tbody>';
   rows.forEach(x => {
     const st = x.st === 'wait' ? '<span class="bkc-tag wait">確認待ち</span>' : x.st === 'bad' ? '<span class="bkc-tag bad">要確認</span>' : '<span class="bkc-tag ok">問題なし</span>';
