@@ -874,6 +874,100 @@ table.bkc{border-collapse:separate;border-spacing:0;width:100%;min-width:1100px}
 .g-pm-r.miss .g-pm-no::after{content:attr(data-miss);display:block;color:var(--shu);font-size:12px;font-weight:700}
 .gen-f.miss{background:var(--shu-soft);box-shadow:inset 4px 0 0 var(--shu);padding-left:10px;padding-right:10px;margin:0 -10px}
 .gen-f.miss .gen-lb::after{content:attr(data-miss);display:block;color:var(--shu);font-size:12px;font-weight:700;margin-top:2px}
+/* 12ヶ月設備点検（v0.22.0） */
+.pi{border:2px solid var(--ai);border-radius:4px;overflow:hidden;margin:0 0 24px;background:var(--surface)}
+.pi-h{background:var(--ai);color:#fff;display:flex;align-items:center;gap:14px;padding:12px 18px;flex-wrap:wrap}
+.pi-h b{font-family:var(--f-display);font-size:21px;font-weight:900;letter-spacing:.04em}
+.pi-h span{font-size:13px;opacity:.88}
+.pi-h .pi-plan{margin-left:auto;color:#fff}
+.pi-row{display:grid;grid-template-columns:110px minmax(0,1fr) auto;gap:16px;align-items:center;padding:14px 18px;border-top:1px solid var(--line)}
+.pi-row .when{font-weight:700;font-size:14px;text-align:center;padding:6px 4px;border-radius:3px;line-height:1.4}
+.pi-row.now .when{background:var(--ai-soft);color:var(--ai)}
+.pi-row.late{background:var(--shu-soft)}
+.pi-row.late .when{background:var(--shu);color:#fff}
+.pi-row.next{background:#FAFBF9}
+.pi-row.next .when{background:var(--paper);color:var(--muted)}
+.pi-row .what b{font-size:18px}
+.pi-row .what small{display:block;color:var(--muted);font-size:13px}
+.pi-row.late .what small{color:var(--shu);font-weight:700}
+.pi-btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+@media (max-width:760px){.pi-row{grid-template-columns:minmax(0,1fr)}.pi-btns{justify-content:flex-start}}
+.pm-top{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:var(--surface);border:1px solid var(--line);margin-bottom:18px}
+.pm-top>div{padding:10px 16px;border-right:1px solid var(--line)}
+.pm-top>div:last-child{border-right:0}
+.pm-top small{display:block;color:var(--muted);font-size:12px}
+.pm-top b{font-size:16px}
+.pm-top input{font:inherit;padding:4px 6px;border:1.5px solid var(--line);border-radius:3px}
+@media (max-width:760px){.pm-top{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.pm-it{display:grid;grid-template-columns:34px minmax(0,1fr) minmax(0,1.1fr);gap:6px 16px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.pm-it .no{font-family:var(--f-mono);font-weight:500;color:var(--ai);font-size:18px}
+.pm-q b{display:block}
+.pm-q .how{font-size:12.5px;color:var(--muted);line-height:1.55;margin-top:3px}
+.pm-q .how i{font-style:normal;font-weight:700;color:var(--ink);margin-right:6px}
+.pm-parts{display:grid;gap:6px;align-content:start}
+.pm-pt{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:2px 4px;border-radius:3px}
+.pm-pt .pl{min-width:5.5em;font-size:13px;font-weight:700;color:var(--muted)}
+.pm-mk{display:flex;gap:4px}
+.pm-mk button{width:44px;height:42px;font:inherit;font-weight:700;font-size:16px;border:1.5px solid var(--line);background:#fff;border-radius:3px;cursor:pointer}
+.pm-mk button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.pm-mk button.x[aria-pressed="true"]{background:var(--shu);border-color:var(--shu)}
+.pm-mk button.w[aria-pressed="true"]{background:var(--warn);border-color:var(--warn)}
+.pm-mk button:disabled{opacity:.35;cursor:not-allowed}
+.pm-num{display:inline-flex;align-items:center;gap:4px}
+.pm-num input{width:72px;font:inherit;font-family:var(--f-mono);text-align:right;padding:6px 8px;border:1.5px solid var(--line);border-radius:3px}
+.pm-num input.in{border-color:var(--ok);background:var(--ok-soft)}
+.pm-num input.out{border-color:var(--shu);background:var(--shu-soft)}
+.pm-num small{font-size:12px;color:var(--muted)}
+.pm-jm{font-size:12px;font-weight:700}.pm-jm.in{color:var(--ok)}.pm-jm.out{color:var(--shu)}
+.pm-note{padding:10px 16px;display:grid;grid-template-columns:34px minmax(0,1fr);gap:16px;background:#FAFBF9}
+.pm-note label{font-size:13px;font-weight:700;color:var(--muted);padding-top:6px;grid-column:1}
+.pm-note textarea{font:inherit;width:100%;box-sizing:border-box;border:1.5px solid var(--line);border-radius:3px;padding:6px 10px;min-height:42px}
+.pm-pt.miss{background:var(--shu-soft);box-shadow:inset 3px 0 0 var(--shu)}
+.pm-pt.miss::after{content:attr(data-miss);color:var(--shu);font-size:12px;font-weight:700}
+.pm-note.miss{background:var(--shu-soft);box-shadow:inset 4px 0 0 var(--shu)}
+.pm-note.miss::after{content:attr(data-miss);grid-column:2;color:var(--shu);font-size:12px;font-weight:700}
+@media (max-width:760px){.pm-it{grid-template-columns:28px minmax(0,1fr)}.pm-parts{grid-column:2}}
+.pm-view{padding:0}
+.pm-vs .gen-sec-h{padding:7px 16px}
+.pm-vr{display:grid;grid-template-columns:34px minmax(0,1fr) minmax(0,1fr);gap:10px;padding:7px 16px;border-bottom:1px solid var(--line);font-size:14px}
+.pm-vr .no{font-family:var(--f-mono);color:var(--ai)}
+.pm-vr.note{background:#FAFBF9;color:var(--muted)}
+.pv{display:flex;gap:14px;flex-wrap:wrap}
+.pv1 small{color:var(--muted);margin-right:4px}
+.pm-v{font-weight:700}.pm-v.x{color:var(--shu)}.pm-v.w{color:var(--warn)}
+.pm-vn{font-family:var(--f-mono);margin-left:6px}.pm-vn.x{color:var(--shu);font-weight:700}
+.pm-judge-v{display:flex;gap:24px;align-items:center;flex-wrap:wrap;padding:12px 16px;font-size:15px}
+.pm-judge-v .go,.pm-pl .go{color:var(--ok)}.pm-judge-v .ng,.pm-pl .ng{color:var(--shu)}
+.pm-jbtns{gap:22px}
+.hanko.pm-go{border-color:var(--ok);color:var(--ok)}.hanko.pm-ng{border-color:var(--shu);color:var(--shu)}
+.hanko.me.sm{width:44px;height:44px;font-size:11px}
+.pm-legend{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin:0 0 10px}
+.pm-legend i{display:inline-block;width:14px;height:14px;border-radius:2px;vertical-align:-2px;margin-right:4px}
+.pm-pl{border-collapse:collapse;min-width:1020px;width:100%;font-size:13px;background:var(--surface)}
+.pm-pl th,.pm-pl td{border:1px solid var(--line);padding:5px 4px;text-align:center}
+.pm-pl thead th{background:var(--ai);color:#fff;border-color:#3E6188}
+.pm-pl thead th.now{background:#2D5A87;box-shadow:inset 0 -3px 0 #F4C46A}
+.pm-pl td.mc{text-align:left;padding-left:10px;white-space:nowrap}
+.pm-pl td.mc small{color:var(--muted);margin-left:6px}
+.pm-pl td.p{height:34px;min-width:44px}
+.pm-pl td.p span,.pm-legend i{display:grid;place-items:center;height:26px;border-radius:3px;font-weight:700;font-size:12px}
+.pm-legend i{display:inline-block;height:14px}
+.s-plan{background:var(--ai-soft);color:var(--ai);border:1.5px dashed var(--ai)}
+.s-done{background:var(--ok);color:#fff}
+.s-wait{background:#FBF0DC;color:var(--warn);border:1.5px solid var(--warn)}
+.s-late{background:var(--shu);color:#fff}
+.s-ng{background:var(--shu-soft);color:var(--shu);border:1.5px solid var(--shu)}
+.s-paper{background:#E6E8E4;color:var(--muted)}
+.pm-pl td.res{font-size:12px;white-space:nowrap}
+.pm-pl td.nt{text-align:left;white-space:normal;max-width:14em}
+.pm-pl tr.go{cursor:pointer}.pm-pl tr.go:hover td{background:var(--ai-soft)}
+.pm-pl td.ed{cursor:pointer}.pm-pl td.ed:hover{background:var(--ai-soft)}
+.pm-pl tfoot td{background:var(--paper);height:52px}
+.pm-pl tfoot .ap-l{text-align:left;font-weight:700;padding-left:10px}
+.pm-edit-bar{background:#FBF0DC;border-left:6px solid var(--warn);padding:10px 14px;margin-bottom:12px;font-size:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.pm-edit-bar b{color:var(--warn)}
+.pm-pl .who,.pm-pl .pm-nt,.pm-pl .pm-pd,#pmAddNo{font:inherit;font-size:13px;padding:3px 6px;border:1.5px solid var(--line);border-radius:3px;background:#fff}
+.pm-paper{display:inline-flex;gap:4px;align-items:center;font-size:12px}
 </style>
 
 
@@ -943,7 +1037,7 @@ img.rail-mark.qms-icon{background:transparent;object-fit:contain;padding:0}
 <div class="busy" id="busy" hidden><span>処理中…</span></div>
 
 <script>
-window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.21.2" };
+window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.22.0" };
 var qmsToken = null, qmsStarted = false;
 // IDトークンの中身はUTF-8（表示用だけに使う。だれかの判定はGAS側でトークンを確かめて得たメールだけを使う）
 function qmsDecode_(str){
@@ -1191,8 +1285,8 @@ function renderHome() {
   const todos = b.todos;
   // 列の振り分け：記入（記入・改善計画書・差し戻し）／確認（日ごとの確認・記録の確認・参加者の押印）／承認
   const colOf = t => /^(entry|entryMulti|kaizen|ijou|returned)$/.test(t.kind) ? 'entry' : /^(confirm|bulkConfirm|participate|detail)$/.test(t.kind) ? 'check' : 'approve';
-  const TAG = { entryMulti: ['e', '記入'], entry: ['e', '記入'], kaizen: ['e', '記入'], ijou: ['e', '記入'], detail: ['c', '記入'], ijouYear: ['c', '承認'], returned: ['b', '差し戻し'], confirm: ['c', '確認'], bulkConfirm: ['c', '確認'], participate: ['c', '押印'], approve: ['c', '承認'], bulkApprove: ['c', '承認'] };
-  const BTN = { entryMulti: 'まとめて記入', entry: '記入する', kaizen: '記入する', ijou: '記入する', detail: '入れる', ijouYear: '台帳を見る', returned: '直す', confirm: '確認へ', bulkConfirm: 'まとめて確認へ', participate: '押印へ', approve: '承認へ', bulkApprove: 'まとめて承認へ' };
+  const TAG = { entryMulti: ['e', '記入'], entry: ['e', '記入'], kaizen: ['e', '記入'], ijou: ['e', '記入'], detail: ['c', '記入'], ijouYear: ['c', '承認'], pmPlan: ['c', '承認'], returned: ['b', '差し戻し'], confirm: ['c', '確認'], bulkConfirm: ['c', '確認'], participate: ['c', '押印'], approve: ['c', '承認'], bulkApprove: ['c', '承認'] };
+  const BTN = { entryMulti: 'まとめて記入', entry: '記入する', kaizen: '記入する', ijou: '記入する', detail: '入れる', ijouYear: '台帳を見る', pmPlan: '予定表へ', returned: '直す', confirm: '確認へ', bulkConfirm: 'まとめて確認へ', participate: '押印へ', approve: '承認へ', bulkApprove: 'まとめて承認へ' };
   const list = { entry: [], check: [], approve: [] };
   todos.forEach((t, i) => list[colOf(t)].push(i));
   const nBack = todos.filter(t => t.kind === 'returned').length;
@@ -1241,7 +1335,7 @@ function renderHome() {
   const legend = '<div class="lg"><span><i class="ok"></i>全台提出</span><span><i class="part"></i>一部の機械が未提出</span><span><i class="no"></i>提出なし</span><span><i class="off"></i>休み</span><span><i class="fut"></i>これから</span></div>';
   const status = !b.status.length ? '<p class="empty">Web入力の対象はまだありません</p>' : b.status.map(group).join('') + legend;
 
-  $('#v-home').innerHTML =
+  $('#v-home').innerHTML = pmBannerHtml(b.pm) +
     '<div class="eyebrow">今日やること</div><h1>' + esc(headline) + '</h1>' +
     '<div class="h-cols">' + col('記入', list.entry) + col('確認', list.check) + col('承認', list.approve) + '</div>' +
     '<section class="status s4"><div class="st-band"><h2>今月の提出状況</h2><p class="st-lead">出勤日に対する提出の割合。押すと機械ごとの一覧</p></div>' + status + '</section>';
@@ -1267,6 +1361,7 @@ function renderHome() {
     cell.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); pickDay(cell); } });
   });
   $('#v-home').querySelectorAll('.st-info').forEach(x => x.addEventListener('click', e => e.preventDefault())); // 説明を押しても行が開閉しないように
+  wirePmBanner($('#v-home'));
   $('#v-home').querySelectorAll('[data-todo]').forEach(btn => btn.addEventListener('click', () => {
     const t = todos[+btn.dataset.todo];
     if (t.kind === 'entry') openEntry(t.formNo, { machineNo: t.machineNo });
@@ -1274,6 +1369,7 @@ function renderHome() {
     else if (t.kind === 'kaizen') openKaizen(t.formNo, t.recordId);
     else if (t.kind === 'ijou') openIjou(t.formNo, { recordId: t.recordId });
     else if (t.kind === 'ijouYear') openIjouYear(t.fy);
+    else if (t.kind === 'pmPlan') openPmPlan(t.fy);
     else if (t.kind === 'bulkConfirm' || t.kind === 'bulkApprove') openBulk(t.kind === 'bulkConfirm' ? 'confirm' : 'approve', t.formNo);
     else openDetail(t.recordId, 'home');
   }));
@@ -1497,6 +1593,8 @@ function openEntry(formNo, opt) {
   if (isDailyForm(f)) { if (opt.machineNo || opt.ym) openDaily(formNo, opt.machineNo || '', opt.ym || S.boot.today.slice(0, 7), opt.date); else openMulti(formNo, opt.date); }
   else if (isKaizenForm(f)) { if (opt.recordId) openKaizen(formNo, opt.recordId); else openKaizenStart(formNo); }
   else if (isIjouForm(f)) openIjou(formNo, opt);
+  else if (isPmForm(f)) { if (opt.machineNo) openPm(opt.machineNo, opt.fy, opt.recordId); else openPmPlan(opt.fy); }
+  else if (isPmPlanForm(f)) openPmPlan(opt.fy);
   else openGeneric(formNo, opt.recordId);
 }
 
@@ -2532,6 +2630,8 @@ async function openDetail(recordId, back) {
     const notes = Object.keys(sheet.days).sort().filter(x => sheet.days[x].note).map(x => '<li>' + (+x.slice(8)) + '日：' + esc(sheet.days[x].note) + '</li>').join('');
     body = '<div class="panel"><div class="panel-head"><h2>' + esc(sheet.machine.label) + '　' + esc(sheet.ym) + '</h2><small style="color:var(--muted)">記入のある日付を押すと、その日の内容を下に表示します</small></div><div class="sheet-wrap"><table class="sheet" id="sheet"></table></div>' +
       (notes ? '<div class="rules"><b>備考</b><ul>' + notes + '</ul></div>' : '') + '</div><div id="dayDetail"></div>';
+  } else if (rec.pm) {
+    body = pmViewHtml(rec);
   } else if (rec.kaizen) {
     body = kaizenViewHtml(rec);
   } else {
@@ -2549,6 +2649,8 @@ async function openDetail(recordId, back) {
       '<div class="days">' + act.confirmDays.map(d => '<label class="' + (d.flags.length ? 'flag' : '') + '"><input type="checkbox" checked data-day="' + d.date + '">' + (+d.date.slice(8)) + '日' + (d.flags.length ? ' ' + d.flags.join('') : '') + '</label>').join('') + '</div>' +
       act.confirmDays.filter(d => d.note).map(d => '<div class="note">' + (+d.date.slice(8)) + '日の備考：' + esc(d.note) + '</div>').join('') +
       '<div class="act-row"><div class="stamp"><button class="hanko me" id="aDays" aria-label="選んだ日を確認して押印">確認<br>押印</button><span>管理監督者</span></div></div>';
+  } else if (rec.pm && act.confirm) {
+    actHtml = pmJudgeHtml(rec);
   } else if (act.confirm || act.approve) {
     const role = act.confirm ? '確認' : '承認';
     actHtml = '<h2>' + role + 'して押印する</h2><p class="hint">上の中身を確認してから押印してください。</p>' +
@@ -2566,6 +2668,7 @@ async function openDetail(recordId, back) {
   const partsHtml = rec.participants ? '<section class="parts"><h2>参加者の押印（' + rec.participants.filter(p => p.stamped).length + '／' + rec.participants.length + '人）</h2><div class="parts-row">' +
     rec.participants.map(p => '<div class="stamp">' + (p.stamped ? hankoImg(p.hanko, p.name, 58) : '<div class="hanko"></div>') + '<span>' + esc(p.name) + (p.stamped ? '<br>' + esc(fmtAt(p.at)) : '<br>未押印') + '</span></div>').join('') + '</div></section>' : '';
   const editBtn = rec.kaizen ? (rec.canEdit ? '<button class="btn primary" id="dEdit">' + (rec.state === '差し戻し' ? '直して再提出する' : '「' + esc(rec.kaizen.stageNames[rec.kaizen.current - 1]) + '」を記入する') + '</button>' : '')
+    : rec.pm && rec.canEdit ? '<button class="btn primary" id="dEdit">' + (rec.state === '差し戻し' ? '直して再提出する' : '続きを記入する') + '</button>'
     : rec.ijou && rec.canEdit ? '<button class="btn primary" id="dEdit">' + (rec.state === '差し戻し' ? '直して再提出する' : '続きを記入する') + '</button>'
     : rec.canEdit && rec.state === '差し戻し' ? '<button class="btn primary" id="dEdit">' + (rec.daily ? '記入画面で直す' : '直して再提出する') + '</button>' : '';
   const pdfOk = rec.kaizen ? rec.kaizen.anyApproved : rec.state === '承認済み';
@@ -2573,7 +2676,7 @@ async function openDetail(recordId, back) {
     '<button class="linkbtn" id="dBack">← もどる</button><div class="eyebrow" style="margin-top:8px">' + esc(rec.code) + '</div><h1>' + esc(rec.formName) + '</h1>' +
     '<div class="doc-meta"><span>対象 ' + esc(rec.targetLabel || rec.target) + '</span><span>期間 ' + esc(rec.period) + '</span><span>作成 ' + esc(rec.maker) + '（' + esc(rec.madeAt.slice(0, 10)) + '）</span><span class="st ' + st + '">' + esc(rec.state) + '</span></div>' +
     (rec.returnComment ? '<div class="alert" style="margin:12px 0"><b>差し戻しの理由：</b>' + esc(rec.returnComment) + '</div>' : '') +
-    stamps + body + ijDetailHtml(rec) + partsHtml + actPanel +
+    stamps + body + ijDetailHtml(rec) + pmReHtml(rec) + partsHtml + actPanel +
     ((pdfOk || editBtn) ? '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;align-items:center">' + (pdfOk ? (rec.pdfUrl ? '<a class="btn primary" href="' + esc(rec.pdfUrl) + '" target="_blank" rel="noopener">PDFを開く ↗</a><button class="linkbtn" id="dPdf">PDFを作り直す</button>' : '<button class="btn primary" id="dPdf">PDFを作る</button>') : '') + editBtn + '<span id="pdfOut"></span></div>' : '') +
     '<ul class="logs">' + rec.logs.map(l => '<li>' + esc(l.at) + '　' + esc(l.action) + '　' + esc(l.name) + (l.comment ? '：' + esc(l.comment) : '') + '</li>').join('') + '</ul>';
   if (rec.daily) {
@@ -2631,7 +2734,8 @@ async function openDetail(recordId, back) {
   });
   const eb = $('#dEdit');
   wireIjDetail(rec);
-  if (eb) eb.addEventListener('click', () => rec.ijou ? openIjou(rec.formNo, { recordId: rec.recordId }) : rec.kaizen ? openKaizen(rec.formNo, rec.recordId) : rec.daily ? openDaily(rec.formNo, rec.target, rec.period) : openGeneric(rec.formNo, rec.recordId));
+  wirePmDetail(rec);
+  if (eb) eb.addEventListener('click', () => rec.pm ? openPm(rec.pm.machine.no, rec.pm.fy, rec.recordId) : rec.ijou ? openIjou(rec.formNo, { recordId: rec.recordId }) : rec.kaizen ? openKaizen(rec.formNo, rec.recordId) : rec.daily ? openDaily(rec.formNo, rec.target, rec.period) : openGeneric(rec.formNo, rec.recordId));
   go('detail');
 }
 // 承認のあと、PDFを裏で作る（画面は待たない）。できたらお知らせし、その記録を開いていれば表示を更新する
@@ -3324,6 +3428,295 @@ function wireIjDetail(rec) {
     try { await run('rejudgeIjou', rec.recordId, dt, S.asEmail); } catch (e) { return; }
     toast('記録しました'); makePdfInBackground(rec.recordId); boot(true); openDetail(rec.recordId, S.back);
   };
+}
+</script>
+
+<script>
+/* ================= 12ヶ月設備点検（No.17〜19）と予定表（No.20）、v0.22.0 =================
+ * 見本 https://claude.ai/artifact/AhFGEiakGY2mSFsuVcCbCC でユーザー合意。
+ */
+const PM_MARKS = [['レ', '問題なし', ''], ['△', '調整・交換した', 'w'], ['×', '要修理', 'x'], ['━', '設備なし', '']];
+const PM_MONTHS = [6, 7, 8, 9, 10, 11, 12, 1, 2, 3, 4, 5];
+function isPmForm(f) { return !!f && String(f.type).indexOf('⑦') === 0; }
+function isPmPlanForm(f) { return !!f && String(f.type).indexOf('⑧') === 0; }
+function pmNumOut(num, n) { const x = parseFloat(n); if (n === '' || n == null || isNaN(x)) return false; return (num.lt != null && !(x < num.lt)) || (num.le != null && !(x <= num.le)); }
+function pmRangeText(num) { return num.lt != null ? num.lt + num.unit + '未満' : num.le + num.unit + '以下'; }
+
+/* ---- ホームの帯 ---- */
+function pmBannerHtml(list) {
+  if (!list || !list.length) return '';
+  const fy = list[0].fy;
+  const groups = {};
+  list.forEach(x => { const k = x.kind + '|' + x.ym; (groups[k] = groups[k] || []).push(x); });
+  const order = ['late', 'now', 'next'];
+  const keys = Object.keys(groups).sort((a, b) => order.indexOf(a.split('|')[0]) - order.indexOf(b.split('|')[0]) || (a > b ? 1 : -1));
+  const today = S.boot.today, last = new Date(+today.slice(0, 4), +today.slice(5, 7), 0).getDate(), left = last - +today.slice(8, 10);
+  return '<section class="pi" aria-label="12ヶ月設備点検"><div class="pi-h"><b>12ヶ月設備点検</b><span>' + fy + '年度 ・ 提出するまで、ここに出ます</span><button type="button" class="linkbtn pi-plan" data-pmplan="' + fy + '">予定表を見る</button></div>' +
+    keys.map(k => {
+      const [kind, ym] = k.split('|'), xs = groups[k], mo = +ym.slice(5);
+      const when = kind === 'late' ? mo + '月予定<br>遅れ' : kind === 'now' ? mo + '月予定<br>今月' : mo + '月予定<br>来月';
+      const sub = kind === 'late' ? '予定月を過ぎています。早めに点検して提出してください' : kind === 'now' ? (xs.length > 1 ? xs.length + '台。' : '') + 'あと ' + left + '日（' + mo + '月' + last + '日まで）' : '来月の予定です。部品・工具の準備をしておきましょう';
+      return '<div class="pi-row ' + kind + '"><div class="when">' + when + '</div><div class="what"><b>' + esc(xs.map(x => x.label).join('・')) + '</b><small>' + esc(sub) + (xs.some(x => x.st === 'draft') ? '（書きかけあり）' : '') + (xs.some(x => x.st === 'returned') ? '（差し戻されています）' : '') + '</small></div>' +
+        '<div class="pi-btns">' + xs.map(x => '<button type="button" class="btn ' + (kind === 'next' ? 'sm' : 'primary') + '" data-pm="' + esc(x.no) + '" data-fy="' + x.fy + '" data-rid="' + esc(x.recordId || '') + '">' + (xs.length > 1 ? esc(x.no) + '号機を' : '') + (x.st === 'draft' ? '続きを記入' : x.st === 'returned' ? '直す' : '記入する') + '</button>').join('') + '</div></div>';
+    }).join('') + '</section>';
+}
+function wirePmBanner(root) {
+  root.querySelectorAll('[data-pm]').forEach(b => b.onclick = () => openPm(b.dataset.pm, +b.dataset.fy, b.dataset.rid));
+  root.querySelectorAll('[data-pmplan]').forEach(b => b.onclick = () => openPmPlan(+b.dataset.pmplan));
+}
+
+/* ---- 点検記録の記入 ---- */
+async function openPm(machineNo, fy, recordId) {
+  let d;
+  try { d = await run('getPm', machineNo || '', fy || '', recordId || '', S.asEmail); } catch (e) { return; }
+  if (d.recordId && !d.canEdit) { openDetail(d.recordId, 'home'); return; }
+  d.data.marks = d.data.marks || {}; d.data.nums = d.data.nums || {}; d.data.notes = d.data.notes || {};
+  S.pm = d;
+  renderPm();
+  go('entry');
+}
+function pmMissing(d) {
+  const out = [], mk = d.data.marks, nums = d.data.nums, notes = d.data.notes;
+  d.def.forEach((s, si) => {
+    let bad = false;
+    s.items.forEach(it => it.parts.forEach((pt, pi) => {
+      const k = it.no + '.' + pi, m = mk[k], nm = it.no + (pt ? '（' + pt + '）' : '');
+      if (!m) { out.push({ si: si, k: k, t: nm }); return; }
+      if (m === '△' || m === '×') bad = true;
+      if (it.num && m !== '━') {
+        if (nums[k] === '' || nums[k] == null || isNaN(parseFloat(nums[k]))) out.push({ si: si, k: k, t: nm + 'の数値', num: 1 });
+        else if (m === 'レ' && pmNumOut(it.num, nums[k])) out.push({ si: si, k: k, t: nm + '（範囲外なのにレ）', num: 1 });
+      }
+    }));
+    if (bad && !String(notes[si] || '').trim()) out.push({ si: si, k: 'note' + si, t: s.name + 'の備考' });
+  });
+  return out;
+}
+function renderPm() {
+  const d = S.pm, f = d.form, data = d.data;
+  const markBtns = (k, it) => '<div class="pm-mk" role="group">' + PM_MARKS.map(m => '<button type="button" class="' + m[2] + '" data-k="' + k + '" data-v="' + m[0] + '" aria-pressed="' + (data.marks[k] === m[0]) + '" title="' + m[1] + '"' + (m[0] === 'レ' && it.num && pmNumOut(it.num, data.nums[k]) ? ' disabled' : '') + '>' + m[0] + '</button>').join('') + '</div>';
+  const part = (it, pt, pi) => {
+    const k = it.no + '.' + pi, n = data.nums[k];
+    const j = it.num && n !== undefined && n !== '' && !isNaN(parseFloat(n)) ? (pmNumOut(it.num, n) ? 'out' : 'in') : '';
+    return '<div class="pm-pt" data-pk="' + k + '">' + (pt ? '<span class="pl">' + esc(pt) + '</span>' : '') +
+      (it.num ? '<span class="pm-num"><input inputmode="decimal" data-n="' + k + '" value="' + esc(n == null ? '' : n) + '" placeholder="0" class="' + j + '" aria-label="' + esc(it.no + ' ' + pt + 'の数値') + '"><small>' + esc(it.num.unit) + '</small></span><span class="pm-jm ' + j + '">' + (j === 'in' ? '範囲内' : j === 'out' ? '範囲外（' + esc(pmRangeText(it.num)) + '）' : '') + '</span>' : '') +
+      markBtns(k, it) + '</div>';
+  };
+  const secs = d.def.map((s, si) => '<section class="gen-sec pm-sec" id="pms' + si + '"><div class="gen-sec-h"><b>' + esc(s.name) + '</b><small id="pmsc' + si + '"></small></div>' +
+    s.items.map(it => '<div class="pm-it"><span class="no">' + it.no + '</span><div class="pm-q"><b>' + esc(it.name) + '</b>' + (it.how ? '<div class="how"><i>方法</i>' + esc(it.how) + '</div>' : '') + '<div class="how"><i>基準</i>' + esc(it.crit) + '</div></div>' +
+      '<div class="pm-parts">' + it.parts.map((pt, pi) => part(it, pt, pi)).join('') + '</div></div>').join('') +
+    '<div class="pm-note" data-pk="note' + si + '"><label for="pmn' + si + '">備考</label><textarea id="pmn' + si + '" data-note="' + si + '" rows="2" placeholder="△・×のときは内容を書く。異常のないときは空欄のまま（PDFは ／）">' + esc(data.notes[si] || '') + '</textarea></div></section>').join('');
+  const plan = d.plan ? d.plan.ym.slice(0, 4) + '年' + (+d.plan.ym.slice(5)) + '月予定' : '予定表にない機械';
+  $('#v-entry').innerHTML =
+    '<div class="doc-head"><div><div class="eyebrow">' + esc(f.cat) + ' ・ 年1回（' + esc(plan) + '）</div><h1>' + esc(f.name) + '</h1>' +
+    '<div class="doc-meta"><span>管理番号 <span class="mono">' + esc(f.code) + '</span></span><span>' + esc(f.rule || '') + '</span><span>' + esc(f.keep ? f.keep + '保管' : '') + '</span><span>' + d.fy + '年度</span></div></div>' +
+    '<div class="pickers"><button type="button" class="btn" id="pmPlanBtn">予定表を見る</button></div></div>' +
+    (d.returnComment ? '<div class="alert" style="margin:0 0 16px"><b>差し戻されました：</b>' + esc(d.returnComment) + '</div>' : '') +
+    '<div class="gen-grid"><form id="pmForm" novalidate>' +
+    '<div class="pm-top"><div><small>機種</small><b>' + esc(d.machine.spec || '') + '</b></div><div><small>機番</small><b>' + esc(d.machine.no) + '号機</b></div>' +
+    '<div><label for="pmDate"><small>実施日</small></label><input type="date" id="pmDate" value="' + esc(data.date || d.today) + '" max="' + esc(d.today) + '"></div><div><small>担当者</small><b>' + esc(data.person || d.me) + '</b></div></div>' +
+    secs + xAlertHtml('pmX', true) + '</form>' +
+    '<aside class="gen-side" aria-label="提出の前に"><div class="gen-box"><h2>提出の前に</h2><ul class="gen-chk" id="pmChk"></ul></div>' +
+    '<div class="gen-box gen-submit"><span class="gen-msg" id="pmMsg"></span><button type="button" class="btn primary big" id="pmSubmit">' + (d.state === '差し戻し' ? '直して再提出する' : '提出する') + '</button><button type="button" class="btn" id="pmSave">途中保存</button><small id="pmSaved">途中保存すると、ホームの帯に「書きかけ」と出ます</small></div>' +
+    '<div class="gen-box"><h2>提出したあとの流れ</h2><ol class="gen-flow"><li><b>合・否の判定</b><small>' + esc(d.route.checker || '管理監督者') + ' さんが日付印。×があれば否</small></li><li><b>否のときは修理のあと再判定</b><small>設備異常アクション手順（QC-01-030）に従った作業のあと</small></li><li><b>承認</b><small>' + esc(d.route.approver || '社長') + ' さん</small></li><li><b>予定表に入る</b><small>実施日・確認日・合否が自動で入ります</small></li></ol></div>' +
+    '<div class="gen-box"><h2>記号</h2><p class="ij-tip">レ 確認済・問題なし　△ 異常・消耗を見つけ調整・修理・交換した　× メーカー修理などが必要　━ その設備が無い機種</p></div></aside></div>';
+  const v = $('#v-entry');
+  v.querySelectorAll('[data-k]').forEach(b => b.onclick = () => { const k = b.dataset.k; data.marks[k] = data.marks[k] === b.dataset.v ? '' : b.dataset.v; if (!data.marks[k]) delete data.marks[k]; pmRefresh(); });
+  v.querySelectorAll('[data-n]').forEach(i => i.oninput = () => {
+    const k = i.dataset.n; data.nums[k] = i.value.trim();
+    const it = pmItemOf(k), out = pmNumOut(it.num, data.nums[k]), ok = data.nums[k] !== '' && !isNaN(parseFloat(data.nums[k]));
+    if (ok && !out && !data.marks[k]) { data.marks[k] = 'レ'; S.pmAuto = Object.assign(S.pmAuto || {}, { [k]: 1 }); } // 範囲内なら自動でレ
+    if ((out || !ok) && data.marks[k] === 'レ' && (S.pmAuto || {})[k]) { delete data.marks[k]; }
+    if (out && data.marks[k] === 'レ') delete data.marks[k];
+    pmRefresh(k);
+  });
+  v.querySelectorAll('[data-note]').forEach(t => t.oninput = () => { data.notes[t.dataset.note] = t.value; pmRefresh('note'); });
+  $('#pmDate').onchange = e => { data.date = e.target.value; };
+  $('#pmSubmit').onclick = () => savePmUi(true);
+  $('#pmSave').onclick = () => savePmUi(false);
+  $('#pmPlanBtn').onclick = () => openPmPlan(d.fy);
+  wireProc(v);
+  pmRefresh();
+}
+function pmItemOf(k) { const no = +k.split('.')[0]; for (const s of S.pm.def) for (const it of s.items) if (it.no === no) return it; return {}; }
+// 表示の更新（入力中の数値欄は作り直さない）
+function pmRefresh(keepKey) {
+  const d = S.pm, data = d.data, miss = pmMissing(d);
+  document.querySelectorAll('#pmForm .pm-mk button').forEach(b => {
+    const k = b.dataset.k, it = pmItemOf(k);
+    b.setAttribute('aria-pressed', String(data.marks[k] === b.dataset.v));
+    b.disabled = b.dataset.v === 'レ' && !!it.num && pmNumOut(it.num, data.nums[k]);
+  });
+  document.querySelectorAll('#pmForm [data-n]').forEach(i => {
+    const k = i.dataset.n, it = pmItemOf(k), n = data.nums[k], ok = n !== undefined && n !== '' && !isNaN(parseFloat(n));
+    const j = ok ? (pmNumOut(it.num, n) ? 'out' : 'in') : '';
+    i.className = j; const jm = i.closest('.pm-pt').querySelector('.pm-jm'); jm.className = 'pm-jm ' + j; jm.textContent = j === 'in' ? '範囲内' : j === 'out' ? '範囲外（' + pmRangeText(it.num) + '）' : '';
+  });
+  // 書き始めた区切りだけ「未入力」
+  d.def.forEach((s, si) => {
+    const started = s.items.some(it => it.parts.some((p, pi) => data.marks[it.no + '.' + pi] || data.nums[it.no + '.' + pi])) || String(data.notes[si] || '').trim();
+    document.querySelectorAll('#pms' + si + ' [data-pk]').forEach(el => {
+      const ms = miss.find(x => x.k === el.dataset.pk);
+      const on = !!started && !!ms;
+      el.classList.toggle('miss', on); if (on) el.dataset.miss = ms.num ? '数値が未入力' : ms.k.indexOf('note') === 0 ? '△・×の内容を書いてください' : '未入力'; else delete el.dataset.miss;
+    });
+    const n = miss.filter(x => x.si === si).length, c = $('#pmsc' + si);
+    if (c) { c.textContent = n ? '残り ' + n : '✔ 入力済み'; c.className = n ? '' : 'done'; }
+  });
+  $('#pmChk').innerHTML = d.def.map((s, si) => { const n = miss.filter(x => x.si === si); return '<li class="' + (n.length ? 'no' : 'ok') + '"><i>' + (n.length ? '！' : '✔') + '</i><a href="#pms' + si + '" data-go="' + si + '">' + esc(s.name) + (n.length ? '（あと' + n.length + '：' + esc(n.slice(0, 3).map(x => x.t).join('・')) + (n.length > 3 ? ' ほか' : '') + '）' : '') + '</a></li>'; }).join('');
+  $('#pmChk').querySelectorAll('[data-go]').forEach(a => a.onclick = e => { e.preventDefault(); $('#pms' + a.dataset.go).scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+  $('#pmMsg').textContent = miss.length ? 'まだの項目が ' + miss.length + 'つあります' : '';
+  $('#pmSubmit').disabled = miss.length > 0;
+  const x = $('#pmX'); if (x) x.hidden = !Object.values(data.marks).some(m => m === '×');
+}
+async function savePmUi(submit) {
+  const d = S.pm;
+  d.data.date = $('#pmDate').value;
+  if (!d.data.date) { toast('実施日を入れてください', true); return; }
+  if (submit) {
+    const miss = pmMissing(d); if (miss.length) { toast('まだの項目があります：' + miss.map(x => x.t).join('、'), true); return; }
+    if (!(await ask(d.machine.label + ' の12ヶ月設備点検記録を提出します。\n' + (d.route.checker || '管理監督者') + ' さんの合・否の判定に進みます。', '提出する'))) return;
+  }
+  let r;
+  try { r = await run('savePm', { recordId: d.recordId, machineNo: d.machine.no, fy: d.fy, data: d.data, submit: submit }, S.asEmail); } catch (e) { return; }
+  d.recordId = r.recordId; d.state = r.state;
+  if (!submit) { toast('途中まで保存しました'); const s = $('#pmSaved'); if (s) s.textContent = '✔ 途中まで保存しました（' + fmtAt(r.savedAt) + '）'; boot(true); return; }
+  toast('提出しました');
+  boot(true);
+  await openDetail(r.recordId, 'home');
+  if (r.hasX) {
+    const notes = d.def.map((s, si) => String(d.data.notes[si] || '').trim()).filter(String).join('／');
+    offerIjou([{ date: d.data.date, machine: d.machine.label, what: notes, src: d.form.no + ':' + d.machine.no + ':' + d.data.date }]);
+  }
+}
+
+/* ---- 記録の画面（中身・合否の判定・再判定） ---- */
+function pmViewHtml(rec) {
+  const p = rec.pm, data = p.data || {}, mk = data.marks || {}, nums = data.nums || {}, notes = data.notes || {};
+  const cell = (it, pi) => { const k = it.no + '.' + pi, m = mk[k] || '', n = nums[k];
+    return '<span class="pm-v ' + (m === '×' ? 'x' : m === '△' ? 'w' : '') + '">' + esc(m) + '</span>' + (it.num && n !== undefined && n !== '' ? '<span class="pm-vn' + (pmNumOut(it.num, n) ? ' x' : '') + '">' + esc(n) + esc(it.num.unit) + '</span>' : ''); };
+  return '<div class="panel pm-view"><div class="pm-top"><div><small>機種</small><b>' + esc(p.machine.spec || '') + '</b></div><div><small>機番</small><b>' + esc(p.machine.no) + '号機</b></div><div><small>実施日</small><b>' + esc(jpDate(data.date || rec.period)) + '</b></div><div><small>担当者</small><b>' + esc(data.person || rec.maker) + '</b></div></div>' +
+    p.def.map((s, si) => '<div class="pm-vs"><div class="gen-sec-h"><b>' + esc(s.name) + '</b></div>' + s.items.map(it => '<div class="pm-vr"><span class="no">' + it.no + '</span><span class="nm">' + esc(it.name) + '</span><span class="pv">' + it.parts.map((pt, pi) => '<span class="pv1">' + (pt ? '<small>' + esc(pt) + '</small>' : '') + cell(it, pi) + '</span>').join('') + '</span></div>').join('') +
+      '<div class="pm-vr note"><span class="no"></span><span class="nm">備考</span><span class="pv">' + (String(notes[si] || '').trim() ? esc(notes[si]) : '<span class="sl">／</span>') + '</span></div></div>').join('') +
+    '<div class="pm-judge-v"><span>管理監督者の判定：<b class="' + (p.judge === '否' ? 'ng' : 'go') + '">' + esc(p.judge || 'まだ') + '</b></span>' + (p.judge === '否' ? '<span>修理後の判定：' + (p.re ? '<b class="go">合</b>（' + esc(fmtAt(p.re.at)) + ' ' + esc(p.re.by) + '）' : '<b class="ng">まだ</b>') + '</span>' : '') +
+    (p.reStamp ? '<span class="stamp">' + dateStamp(p.reStamp.info, p.reStamp.date, 56) + '<span>修理後の判定</span></span>' : '') + '</div>' +
+    '<div style="margin-top:10px"><button type="button" class="btn sm" id="pmToPlan">' + p.fy + '年度の予定表を見る</button></div></div>';
+}
+function pmJudgeHtml(rec) {
+  const hasX = Object.values((rec.pm.data || {}).marks || {}).some(m => m === '×');
+  return '<h2>合・否を判定して押印する</h2><p class="hint">上の点検の中身を確認して、合か否を押してください。' + (hasX ? '<b style="color:var(--shu)">×があるので「否」になります。</b>' : '') + '</p>' +
+    '<div class="act-row pm-jbtns"><button type="button" class="hanko me pm-go" data-judge="合"' + (hasX ? ' disabled' : '') + ' aria-label="合と判定して押印">合<br>押印</button><button type="button" class="hanko me pm-ng" data-judge="否" aria-label="否と判定して押印">否<br>押印</button></div>';
+}
+function wirePmDetail(rec) {
+  if (!rec.pm) return;
+  const pl = $('#pmToPlan'); if (pl) pl.onclick = () => openPmPlan(rec.pm.fy);
+  document.querySelectorAll('[data-judge]').forEach(b => b.onclick = async () => {
+    const j = b.dataset.judge;
+    if (!(await ask(rec.pm.machine.label + ' の12ヶ月設備点検を「' + j + '」と判定して押印します。' + (j === '否' ? '\n修理が終わったら、改めて再判定してください。' : ''), j + 'と判定して押印'))) return;
+    try { await run('judgePm', rec.recordId, j, S.asEmail); } catch (e) { return; }
+    toast(j + 'と判定しました'); boot(true); openDetail(rec.recordId, S.back);
+  });
+  const re = $('#pmRe'); if (re) re.onclick = async () => {
+    if (!(await ask(rec.pm.machine.label + ' の修理が終わり、改めて「合」と判定して押印します。', '合と判定して押印'))) return;
+    let r; try { r = await run('rejudgePm', rec.recordId, S.asEmail); } catch (e) { return; }
+    toast('再判定しました'); if (r.makePdf) makePdfInBackground(rec.recordId); boot(true); openDetail(rec.recordId, S.back);
+  };
+}
+function pmReHtml(rec) {
+  if (!rec.pm || !rec.pm.canRe) return '';
+  return '<section class="act-panel"><h2>修理後の再判定</h2><p class="hint">「否」と判定した機械です。設備異常アクション手順（QC-01-030）に従った修理が終わり、改めて点検して問題なければ押してください。年度末の最終承認の条件になります。</p><div class="act-row"><button type="button" class="hanko me pm-go" id="pmRe">合<br>押印</button></div></section>';
+}
+
+/* ---- 予定表（No.20） ---- */
+async function openPmPlan(fy) {
+  let d;
+  try { d = await run('getPmPlan', fy || '', S.asEmail); } catch (e) { return; }
+  S.pmPlan = d; S.pmEdit = null;
+  renderPmPlan();
+  go('entry');
+}
+const PM_ST = { none: ['予定', 's-plan'], draft: ['書きかけ', 's-plan'], returned: ['差し戻し', 's-late'], wait: ['判定待ち', 's-wait'], approve: ['承認待ち', 's-wait'], done: ['合', 's-done'], ng: ['否', 's-ng'], paper: ['紙で実施', 's-paper'] };
+function renderPmPlan() {
+  const d = S.pmPlan, ed = S.pmEdit, curYm = d.today.slice(0, 7);
+  const rows = ed || d.rows;
+  const sur = s => String(s || '').split(/[\s　]/)[0];
+  const cell = (r, mo) => {
+    const ym = (mo >= 6 ? d.fy : d.fy + 1) + '-' + String(mo).padStart(2, '0');
+    if (ed) return '<td class="p ed" data-mv="' + esc(r.no) + '" data-mo="' + mo + '">' + (r.month === mo ? '<span class="s-plan">予定</span>' : '') + '</td>';
+    if (r.month !== mo) return '<td class="p"></td>';
+    let k = r.st;
+    if ((k === 'none' || k === 'draft') && ym < curYm) k = 'late';
+    const s = k === 'late' ? ['遅れ', 's-late'] : PM_ST[k] || ['予定', 's-plan'];
+    return '<td class="p"><span class="' + s[1] + '">' + s[0] + '</span></td>';
+  };
+  const res = r => {
+    if (r.paper) return '<td class="res mono">' + esc(r.paperDate ? r.paperDate.slice(5).replace('-', '/') : '―') + '</td><td class="res"><span class="sl">紙の記録</span></td>';
+    const j = r.judge ? '<b class="' + (r.judge === '否' ? 'ng' : 'go') + '">' + esc(r.judge) + '</b> ' + esc(r.judgeAt.slice(5, 10).replace('-', '/')) + ' ' + esc(sur(r.judgeBy)) : '';
+    const re = r.judge === '否' ? (r.re ? '<br><b class="go">合</b> ' + esc(r.re.at.slice(5, 10).replace('-', '/')) + '（修理後）' : '<br><span class="ng">修理待ち</span>') : '';
+    return '<td class="res mono">' + esc(r.date ? r.date.slice(5).replace('-', '/') : '') + '</td><td class="res">' + j + re + '</td>';
+  };
+  const people = d.people;
+  const body = rows.map((r, i) => '<tr data-row="' + i + '"' + (ed ? '' : ' class="go"') + '><td class="mc"><b>' + esc(r.spec || '') + ' ' + esc(r.no) + '</b><small>No.' + r.formNo + '</small></td>' +
+    '<td>' + (ed ? '<select class="who" data-who="' + i + '" aria-label="' + esc(r.no) + '号機の担当者">' + (people.indexOf(r.person) < 0 ? '<option>' + esc(r.person) + '</option>' : '') + people.map(p => '<option' + (p === r.person ? ' selected' : '') + '>' + esc(p) + '</option>').join('') + '</select>' : esc(sur(r.person))) + '</td>' +
+    PM_MONTHS.map(mo => cell(r, mo)).join('') +
+    (ed ? '<td colspan="2" class="res"><label class="pm-paper"><input type="checkbox" data-paper="' + i + '"' + (r.paper ? ' checked' : '') + '>紙で実施済み</label><input type="date" class="pm-pd" data-pd="' + i + '" value="' + esc(r.paperDate || '') + '"' + (r.paper ? '' : ' hidden') + ' aria-label="紙の実施日"></td><td><input class="pm-nt" data-nt="' + i + '" value="' + esc(r.note || '') + '" placeholder="備考" aria-label="備考"><button type="button" class="linkbtn" data-del="' + i + '">外す</button></td>'
+      : res(r) + '<td class="res nt">' + esc(r.note || '') + '</td>') + '</tr>').join('');
+  const ap = d.monthAp.map(a => '<td>' + (a.stamp ? dateStamp(a.stamp.info, a.stamp.date, 40) : a.can ? '<button type="button" class="hanko me sm" data-map="' + a.ym + '" aria-label="' + (+a.ym.slice(5)) + '月を承認">承認</button>' : '') + '</td>').join('');
+  const yap = (label, s, can, kind, note) => '<div class="ij-ap"><span>' + label + '</span>' + (s ? dateStamp(s.info, s.date, 60) : can ? '<button class="hanko me" data-yap="' + kind + '">承認<br>押印</button>' : '<div class="hanko"></div>') + '<small>' + esc(note || '') + '</small></div>';
+  $('#v-entry').innerHTML =
+    '<div class="doc-head"><div><div class="eyebrow">設備点検 ・ 年度ごと</div><h1>' + esc(d.form.name) + '</h1>' +
+    '<div class="doc-meta"><span>管理番号 <span class="mono">' + esc(d.form.code) + '</span></span><span>' + d.fy + '年度（' + d.fy + '年6月〜' + (d.fy + 1) + '年5月）</span><span>' + rows.length + '台</span></div></div>' +
+    '<div class="pickers"><label class="picker" for="pmFy">年度<select id="pmFy">' + d.years.map(y => '<option value="' + y + '"' + (y === d.fy ? ' selected' : '') + '>' + y + '年度</option>').join('') + '</select></label>' +
+    (d.canEdit && !ed ? '<button type="button" class="btn" id="pmEdit">予定を直す</button>' + (!d.hasNext ? '<button type="button" class="btn" id="pmCopy">次年度を作る（今年度を写す）</button>' : '') : '') +
+    (ed ? '' : (d.pdfUrl ? '<a class="btn primary" href="' + esc(d.pdfUrl) + '" target="_blank" rel="noopener">PDFを開く ↗</a><button type="button" class="linkbtn" id="pmPdf">PDFを作り直す</button>' : '<button type="button" class="btn primary" id="pmPdf">PDFを作る</button>')) + '</div></div>' +
+    (ed ? '<div class="pm-edit-bar"><b>予定を直しています。</b>月のマスを押すと予定月が移ります。担当者は名前を選び直します。直した内容は変更の記録（設備台帳の変更の記録）に残ります。' +
+      '<span class="pm-add"><select id="pmAddNo" aria-label="追加する機械"><option value="">機械を追加…</option>' + d.machines.filter(x => !ed.some(r => r.no === x.no)).map(x => '<option value="' + esc(x.no) + '">' + esc(x.label) + '</option>').join('') + '</select></span>' +
+      '<button type="button" class="btn" id="pmCancel">やめる</button><button type="button" class="btn primary" id="pmSaveP">保存する</button></div>'
+      : '<div class="legend pm-legend"><span><i class="s-plan"></i>予定</span><span><i class="s-wait"></i>判定・承認待ち</span><span><i class="s-done"></i>合</span><span><i class="s-ng"></i>否（修理待ち）</span><span><i class="s-late"></i>遅れ</span><span><i class="s-paper"></i>紙で実施</span><span>行を押すと点検記録</span></div>') +
+    '<div class="tblw"><table class="pm-pl"><thead><tr><th>機種・機番</th><th>担当者</th>' + PM_MONTHS.map(mo => { const ym = (mo >= 6 ? d.fy : d.fy + 1) + '-' + String(mo).padStart(2, '0'); return '<th class="' + (ym === curYm ? 'now' : '') + '">' + mo + '月</th>'; }).join('') + '<th>実施日</th><th>確認・合否</th><th>備考</th></tr></thead><tbody>' + body + '</tbody>' +
+    (ed ? '' : '<tfoot><tr><td colspan="2" class="ap-l">社長 月の承認</td>' + ap + '<td colspan="3"></td></tr></tfoot>') + '</table></div>' +
+    (ed ? '' : '<section class="ij-aps"><h2>年度の承認（社長）</h2><div class="ij-ap-row">' + yap('年度末承認', d.yearEnd, d.canYearEnd, '年度末', d.yearEnd ? fmtAt(d.yearEnd.at) : '5月の最後の出勤日から') +
+      yap('最終承認', d.final, d.canFinal, '最終', d.final ? fmtAt(d.final.at) : d.finalNeeded ? '否の機械の再判定のあと' : d.yearEnd ? '該当なし' : '「否」の機械があるときだけ') + '</div>' + (d.why ? '<p class="waiting">' + esc(d.why) + '</p>' : '') + '</section>');
+  const v = $('#v-entry');
+  $('#pmFy').onchange = e => openPmPlan(+e.target.value);
+  const on = (id, fn) => { const b = $('#' + id); if (b) b.onclick = fn; };
+  on('pmEdit', () => { S.pmEdit = d.rows.map(r => ({ no: r.no, spec: r.spec, month: r.month, person: r.person, formNo: r.formNo, paper: r.paper, paperDate: r.paperDate, note: r.note })); renderPmPlan(); });
+  on('pmCancel', () => { S.pmEdit = null; renderPmPlan(); });
+  on('pmSaveP', async () => {
+    if (!(await ask(d.fy + '年度の予定を保存します（' + ed.length + '台）。', '保存する'))) return;
+    let r; try { r = await run('savePmPlan', d.fy, ed, S.asEmail); } catch (e) { return; }
+    toast('保存しました（変更 ' + r.changes + '件）'); boot(true); openPmPlan(d.fy);
+  });
+  on('pmCopy', async () => {
+    if (!(await ask(d.fy + '年度の予定を写して、' + (d.fy + 1) + '年度の予定を作ります。変える機械だけ、あとで直してください。', '次年度を作る'))) return;
+    try { await run('copyPmPlan', d.fy, S.asEmail); } catch (e) { return; }
+    toast((d.fy + 1) + '年度の予定を作りました'); openPmPlan(d.fy + 1);
+  });
+  on('pmPdf', async () => { toast('PDFを作っています…'); let r; try { r = await run('makePmPlanPdfNow', d.fy, S.asEmail); } catch (e) { return; } toast('PDFを作りました'); openPmPlan(d.fy); });
+  if (ed) {
+    v.querySelectorAll('[data-mv]').forEach(td => td.onclick = () => { const r = ed.find(x => x.no === td.dataset.mv); r.month = +td.dataset.mo; renderPmPlan(); });
+    v.querySelectorAll('[data-who]').forEach(s => s.onchange = () => { ed[+s.dataset.who].person = s.value; });
+    v.querySelectorAll('[data-paper]').forEach(c => c.onchange = () => { ed[+c.dataset.paper].paper = c.checked; renderPmPlan(); });
+    v.querySelectorAll('[data-pd]').forEach(i => i.onchange = () => { ed[+i.dataset.pd].paperDate = i.value; });
+    v.querySelectorAll('[data-nt]').forEach(i => i.oninput = () => { ed[+i.dataset.nt].note = i.value; });
+    v.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { ed.splice(+b.dataset.del, 1); renderPmPlan(); });
+    const add = $('#pmAddNo'); if (add) add.onchange = () => { const x = d.machines.find(mm => mm.no === add.value); if (!x) return; ed.push({ no: x.no, spec: x.label.replace(/\s*\d+号機$/, ''), month: 6, person: '', formNo: 0, paper: false, paperDate: '', note: '' }); renderPmPlan(); };
+    return;
+  }
+  v.querySelectorAll('tr.go').forEach(tr => tr.onclick = () => { const r = rows[+tr.dataset.row]; if (r.paper) { toast('紙で実施済みの機械です（アプリの記録はありません）'); return; } if (r.recordId && ['draft', 'returned'].indexOf(r.st) < 0) openDetail(r.recordId, 'forms'); else openPm(r.no, d.fy, r.recordId); });
+  v.querySelectorAll('[data-map]').forEach(b => b.onclick = async e => {
+    e.stopPropagation();
+    const ym = b.dataset.map;
+    if (!(await ask(d.fy + '年度の予定表の ' + (+ym.slice(5)) + '月分を承認します。', '承認して押印'))) return;
+    try { await run('approvePmPlan', d.fy, '月:' + ym, S.asEmail); } catch (e2) { return; }
+    toast((+ym.slice(5)) + '月分を承認しました'); boot(true); openPmPlan(d.fy);
+  });
+  v.querySelectorAll('[data-yap]').forEach(b => b.onclick = async () => {
+    const kind = b.dataset.yap;
+    if (!(await ask(d.fy + '年度の予定表を' + (kind === '年度末' ? '年度末承認' : '最終承認') + 'します。', '承認して押印'))) return;
+    let r; try { r = await run('approvePmPlan', d.fy, kind, S.asEmail); } catch (e) { return; }
+    toast(kind === '年度末' && r.finalNeeded ? '年度末承認しました。否の機械の再判定がそろったら、最終承認をしてください' : '承認しました'); boot(true); openPmPlan(d.fy);
+  });
 }
 </script>
 
