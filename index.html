@@ -827,6 +827,12 @@ table.bkc{border-collapse:separate;border-spacing:0;width:100%;min-width:1100px}
 .sheet .rest{display:inline-block;font-weight:700;color:var(--ai);font-size:12px}
 .mt-hb button.rest{border-style:dashed}
 .bkc td.d .r{background:#E3EAF2;color:var(--ai)}
+/* 確認の窓（画面の中央、v0.20.1） */
+.ask-bg{position:fixed;inset:0;z-index:40;background:rgba(23,33,42,.45);display:grid;place-items:center;padding:16px}
+.ask{background:var(--surface);border-top:6px solid var(--ai);border-radius:6px;box-shadow:0 18px 50px rgba(0,0,0,.3);padding:24px 26px 20px;width:min(460px,100%)}
+.ask p{margin:0 0 20px;font-size:16px;line-height:1.75;white-space:pre-line;font-weight:700}
+.ask-btns{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.ask-btns .btn{min-height:46px;padding:0 20px}
 </style>
 
 
@@ -896,7 +902,7 @@ img.rail-mark.qms-icon{background:transparent;object-fit:contain;padding:0}
 <div class="busy" id="busy" hidden><span>処理中…</span></div>
 
 <script>
-window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.20.0" };
+window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.20.1" };
 var qmsToken = null, qmsStarted = false;
 // IDトークンの中身はUTF-8（表示用だけに使う。だれかの判定はGAS側でトークンを確かめて得たメールだけを使う）
 function qmsDecode_(str){
@@ -993,6 +999,22 @@ function toast(msg, err) {
   const t = $('#toast');
   t.innerHTML = msg; t.className = 'toast' + (err ? ' err' : ''); t.hidden = false;
   clearTimeout(toast.t); toast.t = setTimeout(() => { t.hidden = true; }, err ? 6000 : 3500);
+}
+// 確認の窓（画面の中央に出す。ブラウザの confirm は画面の上に出るため使わない、v0.20.1）
+function ask(msg, okLabel) {
+  return new Promise(resolve => {
+    const bg = document.createElement('div');
+    bg.className = 'ask-bg';
+    bg.innerHTML = '<div class="ask" role="alertdialog" aria-modal="true" aria-labelledby="askMsg"><p id="askMsg"></p><div class="ask-btns"><button type="button" class="btn" data-a="0">やめる</button><button type="button" class="btn primary" data-a="1"></button></div></div>';
+    bg.querySelector('#askMsg').textContent = msg;
+    bg.querySelector('[data-a="1"]').textContent = okLabel || 'OK';
+    const done = v => { document.removeEventListener('keydown', key); bg.remove(); resolve(v); };
+    const key = e => { if (e.key === 'Escape') done(false); };
+    bg.addEventListener('click', e => { if (e.target === bg) done(false); const b = e.target.closest('[data-a]'); if (b) done(b.dataset.a === '1'); });
+    document.addEventListener('keydown', key);
+    document.body.appendChild(bg);
+    bg.querySelector('[data-a="1"]').focus();
+  });
 }
 function jpDate(s) {
   const d = new Date(s + 'T00:00:00');
@@ -1644,7 +1666,7 @@ function mtGo(date) {
 // 1台だけ休みとして記録（ほかの機械の入力途中はそのまま残す）
 async function mtRest(no) {
   const d = S.multi;
-  if (!window.confirm(REST_ASK(d.date))) return;
+  if (!(await ask(REST_ASK(d.date), '休みとして記録する'))) return;
   const keep = {}; d.machines.filter(mc => mtEditable(mc) && mc.no !== no).forEach(mc => { keep[mc.no] = S.msel[mc.no]; });
   try { await run('saveDailyBatch', [{ formNo: d.form.no, machineNo: no, date: d.date, rest: true }], S.asEmail); } catch (e) { return; }
   toast('休みとして記録しました');
@@ -1983,7 +2005,7 @@ async function submitDay(msg) {
 // 休み（担当者が休み）：その日の項目と管理監督者欄は ／、担当者欄は「休」。確認・承認はいらない（v0.20.0）
 const REST_ASK = date => jpDate(date) + ' を「休み」として記録します。\n点検の項目と管理監督者の欄は ／、担当者の欄は「休」になり、確認・承認はいりません。よろしいですか？';
 async function restDay(formNo, machineNo, date) {
-  if (!window.confirm(REST_ASK(date))) return null;
+  if (!(await ask(REST_ASK(date), '休みとして記録する'))) return null;
   try { return await run('saveDaily', { formNo: formNo, machineNo: machineNo, date: date, rest: true }, S.asEmail); } catch (e) { return null; }
 }
 // 備考の例（帳票ごと）
