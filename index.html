@@ -1045,7 +1045,7 @@ img.rail-mark.qms-icon{background:transparent;object-fit:contain;padding:0}
     <button class="nav" data-go="home" aria-current="page"><span class="ic" aria-hidden="true">🏠</span><span class="label">ホーム</span></button>
     <button class="nav" data-go="entry"><span class="ic" aria-hidden="true">🧑‍🔧</span><span class="label">わたしの担当</span></button>
     <button class="nav" data-go="forms"><span class="ic" aria-hidden="true">📚</span><span class="label">帳票一覧</span></button>
-    <button class="nav" data-go="approve"><span class="ic" aria-hidden="true">✅</span><span class="label">承認</span><span class="navbadge" id="apBadge" hidden>0</span></button>
+    <button class="nav" data-go="approve"><span class="ic" aria-hidden="true">✅</span><span class="label">確認・承認</span><span class="navbadge" id="apBadge" hidden>0</span></button>
     <button class="nav" data-go="records"><span class="ic" aria-hidden="true">🔍</span><span class="label">記録を探す</span></button>
     <div class="rail-space"></div>
     <div class="rail-user"><div class="av" id="railAv">?</div><div class="who"><b id="railName">読み込み中…</b><span id="railDept">　</span></div></div>
@@ -1079,7 +1079,7 @@ img.rail-mark.qms-icon{background:transparent;object-fit:contain;padding:0}
 <div class="busy" id="busy" hidden><span>処理中…</span></div>
 
 <script>
-window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.24.1" };
+window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.24.2" };
 var qmsToken = null, qmsStarted = false;
 // IDトークンの中身はUTF-8（表示用だけに使う。だれかの判定はGAS側でトークンを確かめて得たメールだけを使う）
 function qmsDecode_(str){
@@ -2580,7 +2580,7 @@ async function submitGeneric() {
 S.ap = { scope: 'mine', formNo: '', ym: '', stage: '' };
 async function openApprovals() {
   const webs = S.boot.forms.filter(f => f.web);
-  $('#v-approve').innerHTML = '<div class="eyebrow">承認</div><h1>確認・承認待ちの記録</h1>' +
+  $('#v-approve').innerHTML = '<div class="eyebrow">確認・承認</div><h1>確認・承認待ちの記録</h1>' +
     (S.boot.todos.filter(t => /^bulk/.test(t.kind)).map(t => '<div class="todo-row bulk-entry"><span class="stripe"></span><div><strong>' + esc(t.title) + '</strong><small>' + esc(t.sub) + '</small></div><button class="btn primary" data-bulk="' + (t.kind === 'bulkConfirm' ? 'confirm' : 'approve') + '" data-form="' + t.formNo + '">' + (t.kind === 'bulkConfirm' ? 'まとめて確認へ' : 'まとめて承認へ') + '</button></div>').join('')) +
     '<div class="chips" id="apScope" role="group" aria-label="表示する範囲" style="margin-top:16px"></div>' +
     '<div class="filters"><label for="aForm">帳票<select id="aForm"><option value="">すべて</option>' + webs.map(f => '<option value="' + f.no + '"' + (String(f.no) === S.ap.formNo ? ' selected' : '') + '>' + esc(f.name) + '</option>').join('') + '</select></label>' +
@@ -2844,7 +2844,7 @@ async function openBulk(kind, formNo) {
 }
 function renderBulkConfirm(d) {
   const okDays = d.ok.reduce((s, x) => s + x.dates.length, 0);
-  $('#v-bulk').innerHTML = '<button class="linkbtn" id="bkBack">← 承認へもどる</button><div class="eyebrow" style="margin-top:8px">まとめて確認</div><h1>' + esc(d.form.name) + '</h1>' +
+  $('#v-bulk').innerHTML = '<button class="linkbtn" id="bkBack">← 確認・承認へもどる</button><div class="eyebrow" style="margin-top:8px">まとめて確認</div><h1>' + esc(d.form.name) + '</h1>' +
     '<p class="hint">確認していない日：<b class="ng">要確認 ' + d.issues.length + '件</b>・問題なし ' + d.ok.length + S.bkU + ' ' + okDays + '日分</p>' +
     '<section class="bk-sec bad"><h2>要確認（' + d.issues.length + '件）<small>△・×・範囲外・備考のある日。中身を見て1件ずつ押印します</small></h2>' +
     (d.issues.length ? d.issues.map((x, i) => '<div class="bk-issue"><div class="bk-head"><b>' + esc(x.label) + '</b><span class="mono">' + esc(jpDate(x.date)) + '</span><small>記入 ' + esc(x.by) + '</small></div>' +
@@ -2877,7 +2877,7 @@ function renderBulkApprove(d) {
   d.ok.forEach(x => { if (S.bkPick[x.recordId] === undefined) S.bkPick[x.recordId] = true; });
   const periods = rows.map(x => x.period).filter((p, i, a) => a.indexOf(p) === i);
   const title = periods.length === 1 ? (+periods[0].slice(0, 4)) + '年' + (+periods[0].slice(5, 7)) + '月の承認' : '月の承認';
-  $('#v-bulk').innerHTML = '<button class="linkbtn" id="bkBack">← 承認へもどる</button><div class="eyebrow" style="margin-top:8px">まとめて承認</div><h1>' + esc(d.form.name) + '　' + title + '</h1>' +
+  $('#v-bulk').innerHTML = '<button class="linkbtn" id="bkBack">← 確認・承認へもどる</button><div class="eyebrow" style="margin-top:8px">まとめて承認</div><h1>' + esc(d.form.name) + '　' + title + '</h1>' +
     '<p class="hint">承認できる月：<b class="ng">要確認 ' + d.issues.length + S.bkU + '</b>・問題なし ' + d.ok.length + S.bkU + (d.waitingCheck ? '　／　' + esc(d.checker) + ' さんの確認待ちでまだ承認できない機械 ' + d.waitingCheck + '台' : '') + '</p>' +
     (rows.length ? '<div class="bkc-box"><div class="bkc-h"><b>全部の' + S.bkN + 'の一ヶ月</b><span>行を押すと、その' + S.bkN + 'の月の表（紙と同じ形）が開きます</span>' +
       '<div class="bkc-lg"><span><i class="k"></i>' + S.bkOk + '</span><span><i class="t"></i>△・備考あり</span><span><i class="x"></i>×</span><span><i class="n"></i>稼働なし</span><span><i class="m"></i>記入なし</span><span><i class="u"></i>確認まだ</span></div></div>' +
@@ -3865,7 +3865,7 @@ function renderMine() {
     const n = x.nConfirm + x.nApprove;
     const sub = (x.nConfirm ? (x.daily ? '確認待ち ' + x.nConfirm + '日分' : '確認待ち ' + x.nConfirm + '件') : '') + (x.nConfirm && x.nApprove ? '・' : '') + (x.nApprove ? '承認待ち ' + x.nApprove + '件' : '') || '待っているものはありません';
     return '<div class="mn-row"><span><b>' + esc(x.formName) + '</b><small>' + esc(x.role) + ' ・ ' + esc(sub) + '</small></span>' + chip(n ? 'wait' : 'ok', n ? n + '件' : 'なし') +
-      '<button type="button" class="btn sm' + (n ? ' primary' : '') + '" data-role="' + i + '">' + (x.daily && x.nConfirm ? 'まとめて確認へ' : x.daily && x.nApprove ? 'まとめて承認へ' : x.pm || x.pmPlan ? '予定表' : x.ijou ? '台帳' : '承認の一覧') + '</button></div>';
+      '<button type="button" class="btn sm' + (n ? ' primary' : '') + '" data-role="' + i + '">' + (x.daily && x.nConfirm ? 'まとめて確認へ' : x.daily && x.nApprove ? 'まとめて承認へ' : x.pm || x.pmPlan ? '予定表' : x.ijou ? '台帳' : '確認・承認の一覧') + '</button></div>';
   }).join('') + '</div>');
   v.innerHTML = h;
   // 押したとき
