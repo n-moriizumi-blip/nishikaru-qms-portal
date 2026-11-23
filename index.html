@@ -1047,7 +1047,7 @@ img.rail-mark.qms-icon{background:transparent;object-fit:contain;padding:0}
 <div class="busy" id="busy" hidden><span>処理中…</span></div>
 
 <script>
-window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.23.2" };
+window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.23.3" };
 var qmsToken = null, qmsStarted = false;
 // IDトークンの中身はUTF-8（表示用だけに使う。だれかの判定はGAS側でトークンを確かめて得たメールだけを使う）
 function qmsDecode_(str){
@@ -1126,10 +1126,13 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const WD = ['日', '月', '火', '水', '木', '金', '土'];
 // 問題なしの記号は帳票ごと（項目定義の選択肢の1つ目。始業前点検はレ、作業環境点検は○、v0.23.0）。選択肢にない記号は出さない
+// 記号の説明：問題なしが ○ の帳票（作業環境点検）は様式の言葉に合わせる（v0.23.3、ユーザー指示）
+function markLbl(ok, m, dflt) { return ok === '○' ? ({ '△': '清掃などをした', '×': '修理などが必要', '／': '点検なし' })[m] || dflt : dflt; }
+function noRunLbl(ok) { return ok === '○' ? '点検なし' : '稼働なし'; }
 function okM() { return (S.daily && S.daily.ok) || 'レ'; }
-function dayMarks(it) { const ok = okM(), o = it.options || []; const base = [[ok, '問題なし', 'ok']].concat(MARKS.slice(1)).filter(m => !o.length || o.indexOf(m[0]) >= 0); return ok !== '○' && o.indexOf('○') >= 0 ? base.concat([['○', '交換した', 'ok']]) : base; }
+function dayMarks(it) { const ok = okM(), o = it.options || []; const base = [[ok, '問題なし', 'ok']].concat(MARKS.slice(1)).filter(m => !o.length || o.indexOf(m[0]) >= 0).map(m => [m[0], markLbl(ok, m[0], m[1]), m[2]]); return ok !== '○' && o.indexOf('○') >= 0 ? base.concat([['○', '交換した', 'ok']]) : base; }
 function mtOk() { return (S.multi && S.multi.ok) || 'レ'; }
-function mtMarksFor(it) { const ok = mtOk(), o = (it && it.options) || []; const base = [[ok, '問題なし', '']].concat(MT_MARKS.slice(1)).filter(m => !o.length || o.indexOf(m[0]) >= 0); return ok !== '○' && o.indexOf('○') >= 0 ? base.concat([['○', '交換した', '']]) : base; }
+function mtMarksFor(it) { const ok = mtOk(), o = (it && it.options) || []; const base = [[ok, '問題なし', '']].concat(MT_MARKS.slice(1)).filter(m => !o.length || o.indexOf(m[0]) >= 0).map(m => [m[0], markLbl(ok, m[0], m[1]), m[2]]); return ok !== '○' && o.indexOf('○') >= 0 ? base.concat([['○', '交換した', '']]) : base; }
 const MARKS = [['レ', '問題なし', 'ok'], ['△', '調整した', 'tri'], ['×', '要修理', 'x'], ['━', '設備なし', 'na']];
 
 function api(fn, ...args) {
@@ -1697,7 +1700,7 @@ function mtCellInner(mc, it0) {
 function mtHead(mc) {
   const ed = mtEditable(mc);
   return '<span class="mt-ml">' + esc(mc.label) + '</span>' + mtChip(mc) +
-    '<div class="mt-hb">' + (ed ? '<button type="button" data-ok="' + esc(mc.no) + '">すべて問題なし</button><button type="button" class="o" data-nr="' + esc(mc.no) + '">稼働なし</button><button type="button" class="o rest" data-rest="' + esc(mc.no) + '" title="担当者が有給などで休みの日">休み</button>'
+    '<div class="mt-hb">' + (ed ? '<button type="button" data-ok="' + esc(mc.no) + '">すべて問題なし</button><button type="button" class="o" data-nr="' + esc(mc.no) + '">' + noRunLbl(mtOk()) + '</button><button type="button" class="o rest" data-rest="' + esc(mc.no) + '" title="担当者が有給などで休みの日">休み</button>'
       : mc.locked ? '' : '<button type="button" class="o" data-fix="' + esc(mc.no) + '">1台の画面で直す</button>') + '</div>';
 }
 function mtBar() {
@@ -2109,9 +2112,9 @@ function renderDaily() {
     items +
     xAlertHtml('xAlert', true) +
     '<div class="notes"><label for="note"><b>' + esc(noteItem ? noteItem.name : '備考') + '</b>　<small style="color:var(--muted)">△・×をつけたときは内容を書いてください</small></label><textarea id="note"' + (locked ? ' disabled' : '') + ' placeholder="' + esc(notePh(f.no)) + '">' + esc((d.days[sel.date] || {}).rest ? '' : sel.note) + '</textarea></div>' +
-    (locked ? '' : '<div class="submit-bar"><small>担当者：' + esc(d.me) + '（自動で入ります）</small><div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn" id="noRun">この日は稼働なし（／）</button><button type="submit" class="btn primary big">提出する</button></div></div>') +
+    (locked ? '' : '<div class="submit-bar"><small>担当者：' + esc(d.me) + '（自動で入ります）</small><div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn" id="noRun">この日は' + noRunLbl(okM()) + '（／）</button><button type="submit" class="btn primary big">提出する</button></div></div>') +
     '</form><div class="panel"><div class="panel-head"><h2>' + esc(d.machine.label) + '　' + esc(d.ym) + '</h2><small style="color:var(--muted)">日付をタップすると、その日を開きます</small></div><div class="sheet-wrap"><table class="sheet" id="sheet"></table></div>' +
-    '<div class="rules"><div><b>' + okM() + '</b> 確認済・問題なし　<b>△</b> 調整・修理した　<b>×</b> メーカー修理などが必要　<b>／</b> 休日・稼働なし　<b>━</b> その設備がない　<b>休</b> 担当者が休み</div>' +
+    '<div class="rules"><div>' + (okM() === '○' ? '<b>○</b> 問題なし　<b>△</b> 異常を見つけ清掃などをした　<b>×</b> 修理などが必要　<b>／</b> 休日・点検なし　<b>休</b> 担当者が休み' : '<b>' + okM() + '</b> 確認済・問題なし　<b>△</b> 調整・修理した　<b>×</b> メーカー修理などが必要　<b>／</b> 休日・稼働なし　<b>━</b> その設備がない　<b>休</b> 担当者が休み') + '</div>' +
     '<div>確認：' + esc(d.route.checker || '―') + '（管理監督者）　承認：' + esc(d.route.approver || '―') + '（' + esc(d.route.timing) + '）</div>' +
     (d.notes || []).map(n => '<div>' + (n.head ? '<b>' + esc(n.head) + '</b> ' : '') + esc(n.text) + '</div>').join('') +
     '</div></div></div>';
@@ -2252,6 +2255,7 @@ async function restDay(formNo, machineNo, date) {
 // 備考の例（帳票ごと）
 function notePh(formNo, members) {
   if (members && members.length) return '例：' + members[0].no + '号機 回転部から異音、ベルトを調整した';
+  if (Number(formNo) === 21) return '例：床に油が飛散していたため清掃した';
   return Number(formNo) === 11 ? '例：エアー圧が低めだったため調整した' : '例：異音がしたため、ベルトを調整した';
 }
 function renderSheet(ro, unc, onPick) {
