@@ -1047,7 +1047,7 @@ img.rail-mark.qms-icon{background:transparent;object-fit:contain;padding:0}
 <div class="busy" id="busy" hidden><span>処理中…</span></div>
 
 <script>
-window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.23.0" };
+window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.23.1" };
 var qmsToken = null, qmsStarted = false;
 // IDトークンの中身はUTF-8（表示用だけに使う。だれかの判定はGAS側でトークンを確かめて得たメールだけを使う）
 function qmsDecode_(str){
@@ -1379,7 +1379,7 @@ function renderHome() {
   wirePmBanner($('#v-home'));
   $('#v-home').querySelectorAll('[data-todo]').forEach(btn => btn.addEventListener('click', () => {
     const t = todos[+btn.dataset.todo];
-    if (t.kind === 'entry') openEntry(t.formNo, { machineNo: t.machineNo, date: t.date });
+    if (t.kind === 'entry') openEntry(t.formNo, { machineNo: t.machineNo, date: t.date, ym: t.ym });
     else if (t.kind === 'entryMulti') openMulti(t.formNo);
     else if (t.kind === 'kaizen') openKaizen(t.formNo, t.recordId);
     else if (t.kind === 'ijou') openIjou(t.formNo, { recordId: t.recordId });
