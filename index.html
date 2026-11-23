@@ -978,6 +978,38 @@ table.bkc{border-collapse:separate;border-spacing:0;width:100%;min-width:1100px}
 .sheet th.mon.sel,.sheet td.mon.sel{box-shadow:inset 0 0 0 2px var(--ai)}
 .mon-info{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .mon-info input{font:inherit;padding:4px 6px;border:1.5px solid var(--line);border-radius:3px}
+/* わたしの担当（v0.24.0） */
+.mn-band{display:grid;grid-template-columns:128px minmax(0,1fr);gap:18px;border-top:2px solid var(--ink);padding:18px 0}
+.mn-band>h2{margin:0;font-family:var(--f-display);font-weight:900;font-size:20px;line-height:1.3}
+.mn-band>h2 small{display:block;font-family:var(--f-body);font-weight:400;font-size:12px;color:var(--muted);margin-top:4px}
+.mn-list{display:grid;gap:12px;min-width:0}
+.mn-card{background:var(--surface);border:1px solid var(--line);padding:14px 16px;display:grid;gap:10px}
+.mn-h{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.mn-h b{font-size:16px}.mn-code{font-size:12px;color:var(--muted)}.mn-sp{flex:1}
+.mn-mc{display:grid;grid-template-columns:160px minmax(0,1fr) 120px auto;gap:12px;align-items:center}
+.mn-nm{font-weight:700}.mn-nm small{display:block;font-weight:400;color:var(--muted);font-size:12px}
+.mn-cal{display:grid;gap:2px}
+.mn-cal i,.mn-lg i{height:16px;border-radius:2px;background:#fff;border:1px solid var(--line);display:block}
+.mn-cal i[data-day]{cursor:pointer}
+.mn-cal i[data-day]:hover,.mn-cal i[data-day]:focus-visible{outline:2px solid var(--ai);outline-offset:1px}
+.mn-cal i.k,.mn-cal i.n,.mn-cal i.r,.mn-lg i.k{background:var(--ok);border-color:var(--ok)}
+.mn-cal i.t,.mn-lg i.t{background:var(--warn);border-color:var(--warn)}
+.mn-cal i.x,.mn-lg i.x{background:var(--shu);border-color:var(--shu)}
+.mn-cal i.o,.mn-lg i.o{background:transparent;border:1px dashed var(--line)}
+.mn-cal i.m,.mn-lg i.m{background:var(--shu-soft);border-color:var(--shu)}
+.mn-cal i.f{background:transparent;border-color:transparent}
+.mn-cal i.now{box-shadow:0 0 0 2px var(--ai)}
+.mn-lg{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--muted);align-items:center}
+.mn-lg i{display:inline-block;width:12px;height:12px;vertical-align:-1px;margin-right:4px}
+.mn-chip{font-size:12px;font-weight:700;padding:3px 8px;border-radius:3px;text-align:center;white-space:nowrap}
+.mn-chip.ok{background:var(--ok-soft);color:var(--ok)}.mn-chip.todo{background:var(--shu-soft);color:var(--shu)}
+.mn-chip.wait{background:#FBF0DC;color:var(--warn)}.mn-chip.plan{background:var(--ai-soft);color:var(--ai)}.mn-chip.paper{background:#E6E8E4;color:var(--muted)}
+.mn-row{display:grid;grid-template-columns:minmax(0,1fr) 140px auto;gap:12px;align-items:center;padding:10px 0;border-top:1px dashed var(--line)}
+.mn-row:first-child{border-top:0;padding-top:0}
+.mn-row b{font-size:15px}.mn-row small{display:block;color:var(--muted);font-size:12px}
+.mn-foot{padding-top:6px}
+.mn-empty{background:var(--surface);border:1.5px dashed var(--line);padding:22px;text-align:center;color:var(--muted)}
+@media (max-width:820px){.mn-band{grid-template-columns:minmax(0,1fr)}.mn-mc{grid-template-columns:minmax(0,1fr) auto auto}.mn-mc .mn-cal{grid-column:1/-1;order:3}.mn-row{grid-template-columns:minmax(0,1fr) auto}}
 </style>
 
 
@@ -1012,7 +1044,7 @@ img.rail-mark.qms-icon{background:transparent;object-fit:contain;padding:0}
     </div>
     <button class="nav" data-go="home" aria-current="page"><span class="ic" aria-hidden="true">🏠</span><span class="label">ホーム</span></button>
     <button class="nav" data-go="forms"><span class="ic" aria-hidden="true">📚</span><span class="label">帳票一覧</span></button>
-    <button class="nav" data-go="entry"><span class="ic" aria-hidden="true">📝</span><span class="label">記入する</span></button>
+    <button class="nav" data-go="entry"><span class="ic" aria-hidden="true">📋</span><span class="label">わたしの担当</span></button>
     <button class="nav" data-go="approve"><span class="ic" aria-hidden="true">✅</span><span class="label">承認</span><span class="navbadge" id="apBadge" hidden>0</span></button>
     <button class="nav" data-go="records"><span class="ic" aria-hidden="true">🔍</span><span class="label">記録を探す</span></button>
     <div class="rail-space"></div>
@@ -1047,7 +1079,7 @@ img.rail-mark.qms-icon{background:transparent;object-fit:contain;padding:0}
 <div class="busy" id="busy" hidden><span>処理中…</span></div>
 
 <script>
-window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.23.3" };
+window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.24.0" };
 var qmsToken = null, qmsStarted = false;
 // IDトークンの中身はUTF-8（表示用だけに使う。だれかの判定はGAS側でトークンを確かめて得たメールだけを使う）
 function qmsDecode_(str){
@@ -1250,7 +1282,7 @@ document.addEventListener('click', e => {
   const v = n.dataset.go;
   if (v === 'home') { renderHome(); go('home'); }
   if (v === 'forms') { openForms(); }
-  if (v === 'entry') { openEntry(null); }
+  if (v === 'entry') { openMine(); } // わたしの担当（v0.24.0、旧「記入する」）
   if (v === 'approve') { openApprovals(); }
   if (v === 'records') { openRecords(); }
 });
@@ -3771,6 +3803,94 @@ function renderPmPlan() {
     if (!(await ask(d.fy + '年度の予定表を' + (kind === '年度末' ? '年度末承認' : '最終承認') + 'します。', '承認して押印'))) return;
     let r; try { r = await run('approvePmPlan', d.fy, kind, S.asEmail); } catch (e) { return; }
     toast(kind === '年度末' && r.finalNeeded ? '年度末承認しました。否の機械の再判定がそろったら、最終承認をしてください' : '承認しました'); boot(true); openPmPlan(d.fy);
+  });
+}
+</script>
+
+<script>
+/* ================= わたしの担当（v0.24.0） =================
+ * 見本 https://claude.ai/artifact/11zreuHtYw8Wif6z9PBJoE でユーザー合意。
+ */
+async function openMine() {
+  let d;
+  try { d = await run('getMine', S.asEmail); } catch (e) { return; }
+  S.mine = d;
+  renderMine();
+  go('entry');
+}
+function renderMine() {
+  const d = S.mine, v = $('#v-entry');
+  const band = (title, sub, body) => '<div class="mn-band"><h2>' + title + '<small>' + sub + '</small></h2><div class="mn-list">' + body + '</div></div>';
+  const chip = (cls, t) => '<span class="mn-chip ' + cls + '">' + esc(t) + '</span>';
+  const md = s => s ? (+s.slice(5, 7)) + '月' + (+s.slice(8, 10)) + '日' : '';
+  const any = d.daily.length || d.monthly.length || d.yearly.length || d.drafts.length || d.roles.length;
+  let h = '<div class="eyebrow">わたしの担当</div><h1>' + esc(d.me) + ' さんの担当</h1><p class="hint">' + (+d.ym.slice(0, 4)) + '年' + (+d.ym.slice(5)) + '月 ・ 担当している点検と、確認・承認の役目。押すと記入画面や記録が開きます</p>';
+  if (!any) {
+    v.innerHTML = h + '<div class="mn-empty">点検や確認の担当はありません。記入するときは「帳票一覧」から帳票を選んでください。<br><button type="button" class="btn" id="mnForms" style="margin-top:12px">帳票一覧へ</button></div>';
+    $('#mnForms').onclick = openForms; return;
+  }
+  // 毎日
+  if (d.daily.length) h += band('毎日', '出勤日ごとの点検', d.daily.map(g =>
+    '<div class="mn-card"><div class="mn-h"><b>' + esc(g.formName) + '</b><span class="mono mn-code">' + esc(g.code) + '</span><span class="mn-sp"></span>' +
+    (g.items.length >= 2 ? '<button type="button" class="btn primary" data-multi="' + g.formNo + '">担当の' + g.items.length + g.unit + 'をまとめて記入</button>' : '') + '</div>' +
+    g.items.map(x => {
+      const st = x.today === 'todo' ? chip('todo', '今日まだ') : x.missing > 0 ? chip('todo', '出ていない日 ' + x.missing) : x.today === 'off' ? chip('ok', '今日は休み') : x.today === 'rest' ? chip('ok', '今日は休み（休）') : chip('ok', '今日は済み');
+      const cells = x.cal.split('').map((c, i) => { const ds = d.ym + '-' + String(i + 1).padStart(2, '0'); const can = c !== ' '; return '<i class="' + (c === ' ' ? 'f' : c) + (ds === d.today ? ' now' : '') + '"' + (can ? ' data-day="' + ds + '" data-f="' + g.formNo + '" data-no="' + esc(x.no) + '" role="button" tabindex="0"' : '') + ' title="' + (i + 1) + '日"></i>'; }).join('');
+      return '<div class="mn-mc"><span class="mn-nm">' + esc(x.label) + '<small>提出 ' + x.done + '日' + (x.state === '差し戻し' ? '・差し戻し' : x.state === '承認済み' ? '・承認済み' : '') + '</small></span>' +
+        '<div class="mn-cal" style="grid-template-columns:repeat(' + x.cal.length + ',minmax(0,1fr))">' + cells + '</div>' + st +
+        '<button type="button" class="btn sm" data-open="' + esc(x.no) + '" data-f="' + g.formNo + '">開く</button></div>';
+    }).join('') +
+    '<div class="mn-lg"><span><i class="k"></i>提出</span><span><i class="t"></i>△・備考</span><span><i class="x"></i>×</span><span><i class="m"></i>出ていない日</span><span><i class="o"></i>休み</span><span>マスを押すとその日を開く</span></div></div>').join(''));
+  // 月に1回
+  if (d.monthly.length) h += band('月に1回', '月次点検など', '<div class="mn-card">' + d.monthly.map(x =>
+    '<div class="mn-row"><span><b>' + esc(x.formName) + '　' + esc(x.label) + '　月次点検</b><small>' + (x.done ? md(x.date) + ' ' + esc(x.by) + ' さんが記入' : md(x.from) + '（その月の最後の出勤日）から記入') + '</small></span>' +
+    (x.done ? chip('ok', '済み') : x.open ? chip('todo', 'まだ') : chip('plan', md(x.from) + 'から')) +
+    '<button type="button" class="btn sm' + (!x.done && x.open ? ' primary' : '') + '" data-mon="' + esc(x.no) + '" data-f="' + x.formNo + '">' + (x.done ? '見る・直す' : '記入する') + '</button></div>').join('') + '</div>');
+  // 年に1回
+  if (d.yearly.length) {
+    const PST = { none: ['予定', 'plan'], draft: ['書きかけ', 'wait'], returned: ['差し戻し', 'todo'], wait: ['判定待ち', 'wait'], approve: ['承認待ち', 'wait'], done: ['合格', 'ok'], ng: ['不合格（修理待ち）', 'todo'], paper: ['紙で実施済み', 'paper'] };
+    h += band('年に1回', '12ヶ月設備点検（' + d.fy + '年度）', '<div class="mn-card">' + d.yearly.map(x => {
+      let s = PST[x.st] || ['予定', 'plan'];
+      if ((x.st === 'none' || x.st === 'draft') && x.ym < d.ym) s = ['遅れ', 'todo'];
+      const act = x.st === 'paper' ? '' : ['none', 'draft', 'returned'].indexOf(x.st) >= 0 ? '<button type="button" class="btn sm primary" data-pm="' + esc(x.no) + '" data-rid="' + esc(x.recordId) + '">' + (x.st === 'none' ? '記入する' : x.st === 'draft' ? '続きを記入' : '直す') + '</button>' : '<button type="button" class="btn sm" data-rec="' + esc(x.recordId) + '">記録を見る</button>';
+      return '<div class="mn-row"><span><b>' + esc(x.label) + '</b><small>' + x.month + '月予定 ・ No.' + x.formNo + '</small></span>' + chip(s[1], s[0]) + act + '</div>';
+    }).join('') + '<div class="mn-foot"><button type="button" class="btn sm" id="mnPlan">' + d.fy + '年度の予定表</button></div></div>');
+  }
+  // 書きかけ・差し戻し
+  if (d.drafts.length) h += band('書きかけ', '途中保存・差し戻し', '<div class="mn-card">' + d.drafts.map((x, i) =>
+    '<div class="mn-row"><span><b>' + esc(x.formName) + '　' + esc(x.target || '') + '</b><small>' + (x.state === '差し戻し' ? '差し戻し：' + esc(x.comment) : esc(fmtAt(x.updatedAt)) + ' 途中保存') + '</small></span>' +
+    chip(x.state === '差し戻し' ? 'todo' : 'wait', x.state === '差し戻し' ? '差し戻し' : '書きかけ') + '<button type="button" class="btn sm primary" data-draft="' + i + '">' + (x.state === '差し戻し' ? '直す' : '続きを記入') + '</button></div>').join('') + '</div>');
+  // 確認・承認の役目
+  if (d.roles.length) h += band('確認・承認', '管理監督者・社長の役目', '<div class="mn-card">' + d.roles.map((x, i) => {
+    const n = x.nConfirm + x.nApprove;
+    const sub = (x.nConfirm ? (x.daily ? '確認待ち ' + x.nConfirm + '日分' : '確認待ち ' + x.nConfirm + '件') : '') + (x.nConfirm && x.nApprove ? '・' : '') + (x.nApprove ? '承認待ち ' + x.nApprove + '件' : '') || '待っているものはありません';
+    return '<div class="mn-row"><span><b>' + esc(x.formName) + '</b><small>' + esc(x.role) + ' ・ ' + esc(sub) + '</small></span>' + chip(n ? 'wait' : 'ok', n ? n + '件' : 'なし') +
+      '<button type="button" class="btn sm' + (n ? ' primary' : '') + '" data-role="' + i + '">' + (x.daily && x.nConfirm ? 'まとめて確認へ' : x.daily && x.nApprove ? 'まとめて承認へ' : x.pm || x.pmPlan ? '予定表' : x.ijou ? '台帳' : '承認の一覧') + '</button></div>';
+  }).join('') + '</div>');
+  v.innerHTML = h;
+  // 押したとき
+  v.querySelectorAll('[data-multi]').forEach(b => b.onclick = () => openMulti(+b.dataset.multi));
+  v.querySelectorAll('[data-open]').forEach(b => b.onclick = () => openDaily(+b.dataset.f, b.dataset.open, d.ym));
+  v.querySelectorAll('.mn-cal [data-day]').forEach(c => { const f = () => openDaily(+c.dataset.f, c.dataset.no, d.ym, c.dataset.day); c.onclick = f; c.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); f(); } }; });
+  v.querySelectorAll('[data-mon]').forEach(b => b.onclick = () => openDaily(+b.dataset.f, b.dataset.mon, d.ym, 'monthly'));
+  v.querySelectorAll('[data-pm]').forEach(b => b.onclick = () => openPm(b.dataset.pm, d.fy, b.dataset.rid));
+  v.querySelectorAll('[data-rec]').forEach(b => b.onclick = () => openDetail(b.dataset.rec, 'entry'));
+  const pl = $('#mnPlan'); if (pl) pl.onclick = () => openPmPlan(d.fy);
+  v.querySelectorAll('[data-draft]').forEach(b => b.onclick = () => {
+    const x = d.drafts[+b.dataset.draft];
+    if (x.kind === 'kaizen') openKaizen(x.formNo, x.recordId);
+    else if (x.kind === 'ijou') openIjou(x.formNo, { recordId: x.recordId });
+    else if (x.kind === 'pm') openPm('', '', x.recordId);
+    else if (x.kind === 'daily') openDaily(x.formNo, x.target0, x.period);
+    else openGeneric(x.formNo, x.recordId);
+  });
+  v.querySelectorAll('[data-role]').forEach(b => b.onclick = () => {
+    const x = d.roles[+b.dataset.role];
+    if (x.daily && x.nConfirm) openBulk('confirm', x.formNo);
+    else if (x.daily && x.nApprove) openBulk('approve', x.formNo);
+    else if (x.pm || x.pmPlan) openPmPlan(d.fy);
+    else if (x.ijou) openIjouYear();
+    else openApprovals();
   });
 }
 </script>
