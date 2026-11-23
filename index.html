@@ -1047,7 +1047,7 @@ img.rail-mark.qms-icon{background:transparent;object-fit:contain;padding:0}
 <div class="busy" id="busy" hidden><span>処理中…</span></div>
 
 <script>
-window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.23.1" };
+window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.23.2" };
 var qmsToken = null, qmsStarted = false;
 // IDトークンの中身はUTF-8（表示用だけに使う。だれかの判定はGAS側でトークンを確かめて得たメールだけを使う）
 function qmsDecode_(str){
@@ -2801,24 +2801,26 @@ async function openBulk(kind, formNo) {
   S.bulk = { kind: kind, formNo: formNo };
   let d;
   try { d = await run(kind === 'confirm' ? 'getBulkConfirm' : 'getBulkApprove', formNo, S.asEmail); } catch (e) { return; }
+  // 場所の帳票（作業環境点検）は「か所」「場所」、問題なしの記号は帳票ごと（v0.23.2）
+  S.bkU = d.unit || '台'; S.bkN = d.unit === 'か所' ? '場所' : '機械'; S.bkOk = d.ok_mark || 'レ';
   if (kind === 'confirm') renderBulkConfirm(d); else renderBulkApprove(d);
   go('bulk');
 }
 function renderBulkConfirm(d) {
   const okDays = d.ok.reduce((s, x) => s + x.dates.length, 0);
   $('#v-bulk').innerHTML = '<button class="linkbtn" id="bkBack">← 承認へもどる</button><div class="eyebrow" style="margin-top:8px">まとめて確認</div><h1>' + esc(d.form.name) + '</h1>' +
-    '<p class="hint">確認していない日：<b class="ng">要確認 ' + d.issues.length + '件</b>・問題なし ' + d.ok.length + '台 ' + okDays + '日分</p>' +
+    '<p class="hint">確認していない日：<b class="ng">要確認 ' + d.issues.length + '件</b>・問題なし ' + d.ok.length + S.bkU + ' ' + okDays + '日分</p>' +
     '<section class="bk-sec bad"><h2>要確認（' + d.issues.length + '件）<small>△・×・範囲外・備考のある日。中身を見て1件ずつ押印します</small></h2>' +
     (d.issues.length ? d.issues.map((x, i) => '<div class="bk-issue"><div class="bk-head"><b>' + esc(x.label) + '</b><span class="mono">' + esc(jpDate(x.date)) + '</span><small>記入 ' + esc(x.by) + '</small></div>' +
       '<ul>' + x.items.map(it => '<li>' + bulkIssueText(it) + '</li>').join('') + (x.note ? '<li>備考：' + esc(x.note) + '</li>' : '') + '</ul>' +
       '<div class="bk-acts"><button class="linkbtn" data-open="' + esc(x.recordId) + '">中身を見る</button><button class="btn primary" data-one="' + i + '">確認して押印</button></div></div>').join('') : '<p class="empty">要確認の日はありません。</p>') + '</section>' +
-    '<section class="bk-sec good"><h2>問題なし（' + d.ok.length + '台・' + okDays + '日分）<small>すべて「レ」または「稼働なし」の日</small></h2>' +
+    '<section class="bk-sec good"><h2>問題なし（' + d.ok.length + S.bkU + '・' + okDays + '日分）<small>すべて「' + S.bkOk + '」または「稼働なし」の日</small></h2>' +
     (d.ok.length ? '<label class="bk-all"><input type="checkbox" id="bkAll" checked> すべて選ぶ</label><div class="bk-list">' +
       d.ok.map((x, i) => '<label class="bk-row"><input type="checkbox" data-ok="' + i + '" checked><b>' + esc(x.label) + '</b><span class="bk-dates">' + x.dates.map(y => '<span class="bk-d' + (y.noRun ? ' norun' : '') + '">' + mmdd(y.date) + (y.noRun ? '（稼働なし）' : '') + '</span>').join('') + '</span></label>').join('') +
       '</div><div class="bk-go"><button class="btn primary big" id="bkGo"></button></div>' : '<p class="empty">問題なしで確認待ちの日はありません。</p>') + '</section>' +
-    (d.notEntered.length ? '<section class="bk-sec"><h2>今日まだ記入されていない機械（' + d.notEntered.length + '台）<small>参考</small></h2><p class="bk-chips">' + d.notEntered.map(x => '<span>' + esc(x) + '</span>').join('') + '</p></section>' : '');
+    (d.notEntered.length ? '<section class="bk-sec"><h2>今日まだ記入されていない' + S.bkN + '（' + d.notEntered.length + S.bkU + '）<small>参考</small></h2><p class="bk-chips">' + d.notEntered.map(x => '<span>' + esc(x) + '</span>').join('') + '</p></section>' : '');
   const sel = () => [...document.querySelectorAll('[data-ok]')].filter(c => c.checked).map(c => d.ok[+c.dataset.ok]);
-  const upd = () => { const b = $('#bkGo'); if (!b) return; const s = sel(); const n = s.reduce((t, x) => t + x.dates.length, 0); b.textContent = '選んだ ' + s.length + '台・' + n + '日分 をまとめて確認して押印'; b.disabled = !s.length; };
+  const upd = () => { const b = $('#bkGo'); if (!b) return; const s = sel(); const n = s.reduce((t, x) => t + x.dates.length, 0); b.textContent = '選んだ ' + s.length + S.bkU + '・' + n + '日分 をまとめて確認して押印'; b.disabled = !s.length; };
   document.querySelectorAll('[data-ok]').forEach(c => c.addEventListener('change', upd));
   const all = $('#bkAll'); if (all) all.addEventListener('change', () => { document.querySelectorAll('[data-ok]').forEach(c => { c.checked = all.checked; }); upd(); });
   upd();
@@ -2840,12 +2842,12 @@ function renderBulkApprove(d) {
   const periods = rows.map(x => x.period).filter((p, i, a) => a.indexOf(p) === i);
   const title = periods.length === 1 ? (+periods[0].slice(0, 4)) + '年' + (+periods[0].slice(5, 7)) + '月の承認' : '月の承認';
   $('#v-bulk').innerHTML = '<button class="linkbtn" id="bkBack">← 承認へもどる</button><div class="eyebrow" style="margin-top:8px">まとめて承認</div><h1>' + esc(d.form.name) + '　' + title + '</h1>' +
-    '<p class="hint">承認できる月：<b class="ng">要確認 ' + d.issues.length + '台</b>・問題なし ' + d.ok.length + '台' + (d.waitingCheck ? '　／　' + esc(d.checker) + ' さんの確認待ちでまだ承認できない機械 ' + d.waitingCheck + '台' : '') + '</p>' +
-    (rows.length ? '<div class="bkc-box"><div class="bkc-h"><b>全部の機械の一ヶ月</b><span>行を押すと、その機械の月の表（紙と同じ形）が開きます</span>' +
-      '<div class="bkc-lg"><span><i class="k"></i>レ</span><span><i class="t"></i>△・備考あり</span><span><i class="x"></i>×</span><span><i class="n"></i>稼働なし</span><span><i class="m"></i>記入なし</span><span><i class="u"></i>確認まだ</span></div></div>' +
+    '<p class="hint">承認できる月：<b class="ng">要確認 ' + d.issues.length + S.bkU + '</b>・問題なし ' + d.ok.length + S.bkU + (d.waitingCheck ? '　／　' + esc(d.checker) + ' さんの確認待ちでまだ承認できない機械 ' + d.waitingCheck + '台' : '') + '</p>' +
+    (rows.length ? '<div class="bkc-box"><div class="bkc-h"><b>全部の' + S.bkN + 'の一ヶ月</b><span>行を押すと、その' + S.bkN + 'の月の表（紙と同じ形）が開きます</span>' +
+      '<div class="bkc-lg"><span><i class="k"></i>' + S.bkOk + '</span><span><i class="t"></i>△・備考あり</span><span><i class="x"></i>×</span><span><i class="n"></i>稼働なし</span><span><i class="m"></i>記入なし</span><span><i class="u"></i>確認まだ</span></div></div>' +
       '<div class="bkc-wrap"><table class="bkc" id="bkCal"></table></div></div>' +
       (d.ok.length ? '<div class="bkc-foot"><span id="bkMsg"></span><button class="btn primary big" id="bkGo"></button></div>' : '')
-      : '<p class="empty">承認待ちの機械はありません。</p>');
+      : '<p class="empty">承認待ちの' + S.bkN + 'はありません。</p>');
   if (rows.length) bkcRender(d, rows);
   $('#bkBack').addEventListener('click', openApprovals);
 }
@@ -2855,9 +2857,9 @@ function bkcRender(d, rows) {
   const ds = n => ym + '-' + String(n).padStart(2, '0');
   const off = d.offDays || [];
   const wdC = n => { const w = new Date(ds(n) + 'T00:00:00').getDay(); return (off.indexOf(ds(n)) >= 0 ? 'we ' : '') + (w === 6 ? 'sat' : w === 0 ? 'sun' : ''); };
-  const SYM = { k: 'レ', t: '△', x: '×', n: '／', m: '', o: '・', r: '休', ' ': '' };
+  const SYM = { k: S.bkOk || 'レ', t: '△', x: '×', n: '／', m: '', o: '・', r: '休', ' ': '' };
   const TIP = { k: '問題なし', t: '△・範囲外・備考あり', x: '×（要修理）', n: '稼働なし', m: '記入なし', o: '休み', r: '担当者が休み', ' ': '' };
-  let h = '<thead><tr><th class="bkc-mc">機械</th><th class="bkc-st">状態</th>' + days.map(n => '<th class="' + wdC(n) + '">' + n + '</th>').join('') + '</tr></thead><tbody>';
+  let h = '<thead><tr><th class="bkc-mc">' + (S.bkN || '機械') + '</th><th class="bkc-st">状態</th>' + days.map(n => '<th class="' + wdC(n) + '">' + n + '</th>').join('') + '</tr></thead><tbody>';
   rows.forEach(x => {
     const st = x.st === 'wait' ? '<span class="bkc-tag wait">確認待ち</span>' : x.st === 'bad' ? '<span class="bkc-tag bad">要確認</span>' : '<span class="bkc-tag ok">問題なし</span>';
     const cb = x.st === 'ok' ? '<input type="checkbox" data-pk="' + esc(x.recordId) + '"' + (S.bkPick[x.recordId] ? ' checked' : '') + ' aria-label="' + esc(x.label) + 'をまとめて承認に入れる">' : '<span class="bkc-cbsp"></span>';
@@ -2870,8 +2872,8 @@ function bkcRender(d, rows) {
   const upd = () => {
     const n = d.ok.filter(x => S.bkPick[x.recordId]).length, b = $('#bkGo');
     if (!b) return;
-    b.textContent = '選んだ ' + n + '台 をまとめて承認して押印'; b.disabled = !n;
-    $('#bkMsg').textContent = '問題なしの ' + d.ok.length + '台のうち ' + n + '台を選んでいます（要確認の機械は、行を開いて1台ずつ承認）';
+    b.textContent = '選んだ ' + n + S.bkU + ' をまとめて承認して押印'; b.disabled = !n;
+    $('#bkMsg').textContent = '問題なしの ' + d.ok.length + S.bkU + 'のうち ' + n + S.bkU + 'を選んでいます（要確認の' + S.bkN + 'は、行を開いて1' + S.bkU + 'ずつ承認）';
   };
   upd();
   $('#bkCal').querySelectorAll('[data-pk]').forEach(c => c.addEventListener('change', () => { S.bkPick[c.dataset.pk] = c.checked; upd(); }));
@@ -2884,7 +2886,7 @@ function bkcRender(d, rows) {
   if (go1) go1.onclick = async () => {
     const ids = d.ok.filter(x => S.bkPick[x.recordId]).map(x => x.recordId);
     let r; try { r = await run('approveBulk', ids, S.asEmail); } catch (e) { return; }
-    toast(r.done.length + '台を承認しました。PDFを順番に作っています…' + (r.errors.length ? '（承認できなかったもの ' + r.errors.length + '台：' + r.errors.map(x => x.label + ' ' + x.error).join('／') + '）' : ''), !!r.errors.length);
+    toast(r.done.length + S.bkU + 'を承認しました。PDFを順番に作っています…' + (r.errors.length ? '（承認できなかったもの ' + r.errors.length + S.bkU + '：' + r.errors.map(x => x.label + ' ' + x.error).join('／') + '）' : ''), !!r.errors.length);
     boot(true); openBulk('approve', d.form.no);
     makePdfsInBackground(r.done);
   };
@@ -2900,7 +2902,7 @@ async function bkcDetail(d, x) {
   S.daily = sh; S.sel = { date: '', marks: {}, nums: {}, note: '', used: [], per: {}, swap: {} };
   const notes = Object.keys(sh.days).sort().filter(k => sh.days[k].note).map(k => (+k.slice(8)) + '日：' + sh.days[k].note);
   $('#bkDet').innerHTML = '<div class="bkc-dh"><b>' + esc(x.label) + '　' + esc(x.period) + '</b><span>担当：' + esc(x.inspector || '―') + '</span>' +
-    (x.st === 'bad' ? '<span class="bkc-tag bad">要確認：中身を見て1台ずつ承認</span><button type="button" class="btn primary" id="bkOne">この機械を承認して押印</button>' : x.st === 'wait' ? '<span class="bkc-tag wait">' + esc(d.checker) + ' さんの確認が ' + x.unconfirmed + '日分まだ</span>' : '') +
+    (x.st === 'bad' ? '<span class="bkc-tag bad">要確認：中身を見て1' + S.bkU + 'ずつ承認</span><button type="button" class="btn primary" id="bkOne">この' + S.bkN + 'を承認して押印</button>' : x.st === 'wait' ? '<span class="bkc-tag wait">' + esc(d.checker) + ' さんの確認が ' + x.unconfirmed + '日分まだ</span>' : '') +
     '<button type="button" class="linkbtn" id="bkOpenRec">記録の画面で開く</button></div>' +
     '<div class="sheet-wrap"><table class="sheet" id="sheet"></table></div>' +
     '<div class="bkc-note"><b>備考</b>　' + (notes.length ? esc(notes.join('　／　')) : 'なし') + '</div>';
