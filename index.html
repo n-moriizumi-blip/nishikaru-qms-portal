@@ -972,6 +972,12 @@ table.bkc{border-collapse:separate;border-spacing:0;width:100%;min-width:1100px}
 .pm-pl td.pm-jcell{white-space:normal}
 .pm-jc{display:inline-flex;align-items:center;gap:6px;margin:2px 4px}
 .pm-jc b{font-size:13px}.pm-jc small{font-size:11px;color:var(--muted)}
+/* 月次点検（v0.23.0） */
+.sheet th.mon{background:#2D5A87;color:#fff;font-size:11px;min-width:3em}
+.sheet td.mon{background:var(--ai-soft);font-weight:700}
+.sheet th.mon.sel,.sheet td.mon.sel{box-shadow:inset 0 0 0 2px var(--ai)}
+.mon-info{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.mon-info input{font:inherit;padding:4px 6px;border:1.5px solid var(--line);border-radius:3px}
 </style>
 
 
@@ -1041,7 +1047,7 @@ img.rail-mark.qms-icon{background:transparent;object-fit:contain;padding:0}
 <div class="busy" id="busy" hidden><span>処理中…</span></div>
 
 <script>
-window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.22.4" };
+window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.23.0" };
 var qmsToken = null, qmsStarted = false;
 // IDトークンの中身はUTF-8（表示用だけに使う。だれかの判定はGAS側でトークンを確かめて得たメールだけを使う）
 function qmsDecode_(str){
@@ -1119,6 +1125,11 @@ const S = { boot: null, asEmail: '', view: 'home', cat: 'すべて', q: '', dail
 const $ = s => document.querySelector(s);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const WD = ['日', '月', '火', '水', '木', '金', '土'];
+// 問題なしの記号は帳票ごと（項目定義の選択肢の1つ目。始業前点検はレ、作業環境点検は○、v0.23.0）。選択肢にない記号は出さない
+function okM() { return (S.daily && S.daily.ok) || 'レ'; }
+function dayMarks(it) { const ok = okM(), o = it.options || []; const base = [[ok, '問題なし', 'ok']].concat(MARKS.slice(1)).filter(m => !o.length || o.indexOf(m[0]) >= 0); return ok !== '○' && o.indexOf('○') >= 0 ? base.concat([['○', '交換した', 'ok']]) : base; }
+function mtOk() { return (S.multi && S.multi.ok) || 'レ'; }
+function mtMarksFor(it) { const ok = mtOk(), o = (it && it.options) || []; const base = [[ok, '問題なし', '']].concat(MT_MARKS.slice(1)).filter(m => !o.length || o.indexOf(m[0]) >= 0); return ok !== '○' && o.indexOf('○') >= 0 ? base.concat([['○', '交換した', '']]) : base; }
 const MARKS = [['レ', '問題なし', 'ok'], ['△', '調整した', 'tri'], ['×', '要修理', 'x'], ['━', '設備なし', 'na']];
 
 function api(fn, ...args) {
@@ -1368,7 +1379,7 @@ function renderHome() {
   wirePmBanner($('#v-home'));
   $('#v-home').querySelectorAll('[data-todo]').forEach(btn => btn.addEventListener('click', () => {
     const t = todos[+btn.dataset.todo];
-    if (t.kind === 'entry') openEntry(t.formNo, { machineNo: t.machineNo });
+    if (t.kind === 'entry') openEntry(t.formNo, { machineNo: t.machineNo, date: t.date });
     else if (t.kind === 'entryMulti') openMulti(t.formNo);
     else if (t.kind === 'kaizen') openKaizen(t.formNo, t.recordId);
     else if (t.kind === 'ijou') openIjou(t.formNo, { recordId: t.recordId });
@@ -1637,7 +1648,7 @@ function mtCheck(mc) {
     if (isNumItem(it) && mk !== '／' && mk !== '━') {
       const j = judgeNum(it, s.nums[it.no]);
       if (!j) { left++; names.push(short(it) + 'の数値'); }
-      else if (j === 'out' && mk === 'レ') { left++; names.push(short(it) + '（範囲外なのにレ）'); why = why || '範囲外の数値にレがついています'; }
+      else if (j === 'out' && mk === mtOk()) { left++; names.push(short(it) + '（範囲外なのにレ）'); why = why || '範囲外の数値にレがついています'; }
     }
   });
   const bad = Object.values(s.marks).some(v => v === '△' || v === '×');
@@ -1678,7 +1689,7 @@ function mtCellInner(mc, it0) {
   const num = ed ? (s.nums[it.no] !== undefined ? s.nums[it.no] : '') : ((mc.marks[it.no] || {}).num || '');
   const j = isNumItem(it) ? judgeNum(it, num) : '';
   if (it.fixed) return '<div class="mt-bs"><button type="button" class="mt-b" aria-pressed="true" disabled title="設備なし" aria-label="' + esc(mc.label + ' ' + it.name) + ' 設備なし（固定）">━</button></div><span class="mt-fixed">設備なし</span>';
-  const marks = isDoItem(it) ? [[doMark(it), '実施した', '']] : MT_MARKS.concat((it.options || []).indexOf('○') >= 0 ? [['○', '交換した', '']] : []);
+  const marks = isDoItem(it) ? [[doMark(it), '実施した', '']] : mtMarksFor(it);
   const btns = '<div class="mt-bs">' + marks.map(mk => '<button type="button" class="mt-b ' + mk[2] + '" data-m="' + esc(mc.no) + '" data-no="' + it.no + '" data-v="' + mk[0] + '" aria-pressed="' + (cur === mk[0]) + '" title="' + mk[1] + '" aria-label="' + esc(mc.label + ' ' + it.name + ' ' + mk[1]) + '"' + (!ed || (mk[0] === 'レ' && j === 'out' && !isDoItem(it)) ? ' disabled' : '') + '>' + mk[0] + '</button>').join('') + '</div>';
   const jm = j === 'in' ? '<span class="mt-jm in">範囲内</span>' : j === 'out' ? '<span class="mt-jm out">範囲外（' + esc(rangeOf(it).text) + '）</span>' : '';
   return (isNumItem(it) ? '<div class="mt-num"><input class="mt-in' + (j === 'in' ? ' in' : j === 'out' ? ' out' : '') + '" id="mt-' + esc(mc.no) + '-' + it.no + '" data-m="' + esc(mc.no) + '" data-no="' + it.no + '" inputmode="decimal" value="' + esc(num) + '" placeholder="0.0" aria-label="' + esc(mc.label + ' ' + it.name) + 'の数値"' + (ed ? '' : ' disabled') + '><small>' + esc(it.unit || '') + '</small></div><div class="mt-jmw">' + jm + '</div>' : '') + btns;
@@ -1704,7 +1715,7 @@ function mtBar() {
 }
 function renderMulti() {
   const d = S.multi, f = d.form;
-  const keys = '<div class="mt-keys" aria-label="記号の意味">' + MT_MARKS.map(m => '<span class="' + m[2] + '"><b>' + m[0] + '</b>' + m[1] + '</span>').join('') + '</div>';
+  const keys = '<div class="mt-keys" aria-label="記号の意味">' + mtMarksFor(d.items.find(x => /^記号/.test(x.kind))).map(m => '<span class="' + m[2] + '"><b>' + m[0] + '</b>' + m[1] + '</span>').join('') + '</div>';
   const th = d.machines.map((mc, i) => '<th scope="col" class="c' + (i % 2) + '" data-head="' + esc(mc.no) + '">' + mtHead(mc) + '</th>').join('');
   const rows = d.items.map(it => '<tr><th scope="row">' + esc(it.name.replace(/（.*$/, '')) + (/（/.test(it.name) ? '<small>' + esc((it.name.match(/（(.*)）/) || [])[1] || '') + '</small>' : '') + '</th>' +
     d.machines.map((mc, i) => '<td class="c' + (i % 2) + '" data-cell="' + esc(mc.no) + '-' + it.no + '">' + mtCellInner(mc, it) + '</td>').join('') + '</tr>').join('') +
@@ -1789,9 +1800,9 @@ function mtNum(mcNo, no, val) {
   s.nums[no] = val;
   const j = judgeNum(it, val);
   // 範囲が決まっている数値は、範囲内なら自動で「レ」。自分で選んだ△などはそのまま。範囲外・空欄になったら自動のレは外す
-  if (j === 'in' && (!s.marks[no] || s.auto[no])) { s.marks[no] = 'レ'; s.auto[no] = true; }
-  else if (j !== 'in' && s.auto[no]) { if (s.marks[no] === 'レ') delete s.marks[no]; delete s.auto[no]; }
-  if (j === 'out' && s.marks[no] === 'レ') delete s.marks[no];
+  if (j === 'in' && (!s.marks[no] || s.auto[no])) { s.marks[no] = mtOk(); s.auto[no] = true; }
+  else if (j !== 'in' && s.auto[no]) { if (s.marks[no] === mtOk()) delete s.marks[no]; delete s.auto[no]; }
+  if (j === 'out' && s.marks[no] === mtOk()) delete s.marks[no];
   if (s.marks[no] === '／' || s.marks[no] === '━') delete s.marks[no]; // 数値を入れたら、稼働なし・設備なしは外す
 }
 function mtAllOk(mcNo) {
@@ -1802,7 +1813,7 @@ function mtAllOk(mcNo) {
     if (isDoItem(it) || it.fixed) return;
     if (isNumItem(it) && judgeNum(it, s.nums[it.no]) === 'out') { skipped++; return; } // 範囲外はレにしない
     if (s.marks[it.no] === '／' || s.marks[it.no] === '━') delete s.marks[it.no];
-    if (!s.marks[it.no] || s.marks[it.no] === 'レ') s.marks[it.no] = 'レ';
+    if (!s.marks[it.no] || s.marks[it.no] === mtOk()) s.marks[it.no] = mtOk();
   });
   return skipped;
 }
@@ -2023,6 +2034,12 @@ function gCell(it, mk, member) {
 }
 
 function loadDay(date) {
+  if (date === 'monthly') { // 月次点検（月に1回・全項目、v0.23.0）
+    const mo = S.daily.monthly || {}, last = daysOf(S.daily.ym).slice(-1)[0];
+    S.sel = { date: 'monthly', marks: Object.assign({}, mo.marks || {}), nums: {}, note: mo.note || '', monDate: mo.date || (S.daily.today.slice(0, 7) === S.daily.ym ? S.daily.today : last) };
+    Object.keys(S.sel.marks).forEach(k => { if (S.sel.marks[k] === '／' || !S.sel.marks[k]) delete S.sel.marks[k]; });
+    return;
+  }
   if (isGroupDaily()) { gLoadDay(date); return; }
   const day = S.daily.days[date];
   S.sel = { date: date, marks: {}, nums: {}, note: '' };
@@ -2070,7 +2087,7 @@ function renderDaily() {
       (fx ? '<div class="hint"><b>この機械には設備がないため「━ 設備なし」で固定です</b>（設備台帳の点検の設定で変えられます）</div>' : '') +
       (rg ? '<div class="hint"><b>数値は必須</b>' + (rg.has ? '　範囲：' + esc(rg.text) + '（範囲外のときは「レ」を選べません）' : '') + '</div>' : '') +
       '<div class="ctrl" data-no="' + it.no + '">' + numBox +
-      (fx ? [['━', '設備なし', 'na']] : isDoItem(it) ? [[doMark(it), '実施した', 'ok']] : MARKS.concat((it.options || []).indexOf('○') >= 0 ? [['○', '交換した', 'ok']] : [])).map(m => '<button type="button" class="mark ' + m[2] + '" data-m="' + m[0] + '" aria-pressed="' + (sel.marks[it.no] === m[0]) + '"' + (locked || fx ? ' disabled' : '') + '><b>' + m[0] + '</b><small>' + m[1] + '</small></button>').join('') +
+      (fx ? [['━', '設備なし', 'na']] : isDoItem(it) ? [[doMark(it), '実施した', 'ok']] : dayMarks(it)).map(m => '<button type="button" class="mark ' + m[2] + '" data-m="' + m[0] + '" aria-pressed="' + (sel.marks[it.no] === m[0]) + '"' + (locked || fx ? ' disabled' : '') + '><b>' + m[0] + '</b><small>' + m[1] + '</small></button>').join('') +
       (isDoItem(it) ? '<small class="do-hint">実施した日だけ押します（もう一度押すと取り消し）</small>' : '') +
       '<span class="num-msg" id="msg' + it.no + '"></span></div></div>';
   }).join('');
@@ -2084,7 +2101,7 @@ function renderDaily() {
     (d.returnComment ? '<div class="alert" style="margin:0 0 16px"><b>差し戻されました：</b>' + esc(d.returnComment) + '<br>直したい日を選んで記入し直してください。</div>' : '') +
     (locked ? '<div class="info" style="margin:0 0 16px">この月の記録は承認済みです（' + esc(d.route.approver) + '）。見るだけで、変更はできません。</div>' : '') +
     '<div class="entry-grid"><form class="panel" id="dayForm" novalidate>' +
-    '<div class="panel-head"><label class="picker" for="dateSel" style="color:var(--ink)"><span class="eyebrow">記入する日</span><select id="dateSel">' +
+    '<div class="panel-head"><label class="picker" for="dateSel" style="color:var(--ink)"><span class="eyebrow">記入する日</span><select id="dateSel">' + (d.hasMonthly ? '<option value="monthly"' + (sel.date === 'monthly' ? ' selected' : '') + '>月次点検（月に1回・全項目）' + (d.monthly ? '　記入済み' : '') + '</option>' : '') +
     ymDays.slice().reverse().map(x => '<option value="' + x + '"' + (x === sel.date ? ' selected' : '') + '>' + jpDate(x) + (d.days[x] ? '　記入済み' : isWorkday(x) ? '' : '　休日') + '</option>').join('') + '</select></label>' +
     (locked ? '' : '<div class="head-btns"><button type="button" class="btn" id="allOk">すべて「問題なし」にする</button><button type="button" class="btn rest-btn" id="restBtn" title="担当者が有給などで休みの日">休み</button></div>') + '</div>' +
     ((d.days[sel.date] || {}).rest ? '<div class="info">この日は「休み」として記録されています（担当者の欄は「休」、確認・承認はいりません）。点検した日なら、記入し直して提出してください。</div>' : '') +
@@ -2094,7 +2111,7 @@ function renderDaily() {
     '<div class="notes"><label for="note"><b>' + esc(noteItem ? noteItem.name : '備考') + '</b>　<small style="color:var(--muted)">△・×をつけたときは内容を書いてください</small></label><textarea id="note"' + (locked ? ' disabled' : '') + ' placeholder="' + esc(notePh(f.no)) + '">' + esc((d.days[sel.date] || {}).rest ? '' : sel.note) + '</textarea></div>' +
     (locked ? '' : '<div class="submit-bar"><small>担当者：' + esc(d.me) + '（自動で入ります）</small><div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn" id="noRun">この日は稼働なし（／）</button><button type="submit" class="btn primary big">提出する</button></div></div>') +
     '</form><div class="panel"><div class="panel-head"><h2>' + esc(d.machine.label) + '　' + esc(d.ym) + '</h2><small style="color:var(--muted)">日付をタップすると、その日を開きます</small></div><div class="sheet-wrap"><table class="sheet" id="sheet"></table></div>' +
-    '<div class="rules"><div><b>レ</b> 確認済・問題なし　<b>△</b> 調整・修理した　<b>×</b> メーカー修理などが必要　<b>／</b> 休日・稼働なし　<b>━</b> その設備がない　<b>休</b> 担当者が休み</div>' +
+    '<div class="rules"><div><b>' + okM() + '</b> 確認済・問題なし　<b>△</b> 調整・修理した　<b>×</b> メーカー修理などが必要　<b>／</b> 休日・稼働なし　<b>━</b> その設備がない　<b>休</b> 担当者が休み</div>' +
     '<div>確認：' + esc(d.route.checker || '―') + '（管理監督者）　承認：' + esc(d.route.approver || '―') + '（' + esc(d.route.timing) + '）</div>' +
     (d.notes || []).map(n => '<div>' + (n.head ? '<b>' + esc(n.head) + '</b> ' : '') + esc(n.text) + '</div>').join('') +
     '</div></div></div>';
@@ -2102,6 +2119,12 @@ function renderDaily() {
   renderSheet();
   refreshAlerts();
   wireProc($('#v-entry'));
+  if (sel.date === 'monthly') {
+    ['restBtn', 'noRun'].forEach(id => { const b = $('#' + id); if (b) b.hidden = true; });
+    const ph = $('#dayForm .panel-head');
+    if (ph) ph.insertAdjacentHTML('afterend', '<div class="info mon-info"><b>月次点検</b>　月に1回、全項目を点検します。<label>点検した日 <input type="date" id="monDate" value="' + esc(sel.monDate) + '" min="' + esc(d.ym) + '-01" max="' + esc(daysOf(d.ym).slice(-1)[0] < d.today ? daysOf(d.ym).slice(-1)[0] : d.today) + '"' + (locked ? ' disabled' : '') + '></label>' + (d.monthly ? '　（' + esc(d.monthly.by) + ' さんが記入済み。直すと上書きします）' : '') + '</div>');
+    const md = $('#monDate'); if (md) md.onchange = () => { S.sel.monDate = md.value; };
+  }
   checkItems().forEach(it => { if (/数値/.test(it.kind) && !it.fixed) validateNum(it.no); });
   $('#mcSel').addEventListener('change', e => openDaily(f.no, e.target.value, d.ym));
   if ($('#toMulti')) $('#toMulti').addEventListener('click', () => openMulti(f.no, sel.date));
@@ -2121,7 +2144,7 @@ function renderDaily() {
   }));
   $('#v-entry').querySelectorAll('.num input').forEach(inp => inp.addEventListener('input', () => { S.sel.nums[inp.dataset.no] = inp.value; validateNum(inp.dataset.no, true); dayMiss(); }));
   $('#note').addEventListener('input', e => { S.sel.note = e.target.value; });
-  $('#allOk').addEventListener('click', () => { checkItems().filter(it => !isDoItem(it) && !it.fixed).forEach(it => { S.sel.marks[it.no] = 'レ'; }); renderDaily(); toast('すべて「問題なし」にしました。違うところだけ直してください'); });
+  $('#allOk').addEventListener('click', () => { checkItems().filter(it => !isDoItem(it) && !it.fixed).forEach(it => { S.sel.marks[it.no] = okM(); }); renderDaily(); toast('すべて「問題なし」にしました。違うところだけ直してください'); });
   $('#restBtn').addEventListener('click', async () => { const r = await restDay(f.no, d.machine.no, sel.date); if (!r) return; toast('休みとして記録しました'); await openDaily(f.no, d.machine.no, d.ym, sel.date, r.sheet); boot(true); });
   $('#noRun').addEventListener('click', () => { checkItems().forEach(it => { if (it.fixed) return; if (isDoItem(it)) delete S.sel.marks[it.no]; else S.sel.marks[it.no] = '／'; }); S.sel.nums = {}; submitDay('稼働なしとして記録しました'); });
   $('#dayForm').addEventListener('submit', e => { e.preventDefault(); submitDay('提出しました'); });
@@ -2181,6 +2204,7 @@ function refreshAlerts() {
   const n = $('#note'); if (n) n.classList.toggle('need', v.indexOf('×') >= 0 || v.indexOf('△') >= 0);
 }
 async function submitDay(msg) {
+  if (S.sel.date === 'monthly') return submitMonthly();
   const d = S.daily, sel = S.sel;
   const items = checkItems();
   const missing = items.filter(it => !isDoItem(it) && !sel.marks[it.no]);
@@ -2204,6 +2228,21 @@ async function submitDay(msg) {
   boot(true);
   if (v.indexOf('×') >= 0) offerIjou([{ date: sel.date, machine: d.machine.label, what: sel.note, src: d.form.no + ':' + d.machine.no + ':' + sel.date }]);
 }
+// 月次点検を提出（v0.23.0）
+async function submitMonthly() {
+  const d = S.daily, sel = S.sel, items = checkItems();
+  const missing = items.filter(it => !isDoItem(it) && !sel.marks[it.no]);
+  if (missing.length) { toast('まだ選んでいない項目があります（' + missing.map(it => it.name.replace(/（.*$/, '')).join('・') + '）', true); return; }
+  const v = items.map(it => sel.marks[it.no]);
+  if ((v.indexOf('×') >= 0 || v.indexOf('△') >= 0) && !String(sel.note).trim()) { toast('△・×があるので、備考に内容を書いてください', true); $('#note').focus(); return; }
+  if (!sel.monDate) { toast('点検した日を入れてください', true); return; }
+  let r;
+  try { r = await run('saveMonthly', { formNo: d.form.no, machineNo: d.machine.no, ym: d.ym, date: sel.monDate, marks: sel.marks, note: sel.note }, S.asEmail); } catch (e) { return; }
+  toast('月次点検を記録しました');
+  await openDaily(d.form.no, d.machine.no, d.ym, 'monthly', r.sheet);
+  boot(true);
+  if (v.indexOf('×') >= 0) offerIjou([{ date: sel.monDate, machine: d.machine.label, what: sel.note, src: d.form.no + ':' + d.machine.no + ':' + sel.monDate }]);
+}
 // 休み（担当者が休み）：その日の項目と管理監督者欄は ／、担当者欄は「休」。確認・承認はいらない（v0.20.0）
 const REST_ASK = date => jpDate(date) + ' を「休み」として記録します。\n点検の項目と管理監督者の欄は ／、担当者の欄は「休」になり、確認・承認はいりません。よろしいですか？';
 async function restDay(formNo, machineNo, date) {
@@ -2222,10 +2261,13 @@ function renderSheet(ro, unc, onPick) {
   const lastWork = days.slice().reverse().find(isWorkday) || days[0];
   const offSlash = x => d.today >= lastWork && !isWorkday(x) && !d.days[x];
   const short = n => n.replace(/（.*$/, '');
+  const mo = d.monthly || {};
+  const monTh = () => d.hasMonthly ? '<th class="mon pick' + (S.sel.date === 'monthly' ? ' sel' : '') + '" data-day="monthly" title="月次点検">月次</th>' : '';
+  const monTd = it => { if (!d.hasMonthly) return ''; const v = (mo.marks || {})[it.no] || ''; return '<td class="mon ' + (v === '×' ? 'x ' : v === '△' ? 'tri ' : '') + (S.sel.date === 'monthly' ? 'sel' : '') + '">' + esc(v) + '</td>'; };
   let h = '<thead><tr><th class="it">点検項目</th>' + days.map(x => {
     const can = ro ? !!(onPick && d.days[x]) : x <= d.today;
     return '<th class="' + (unc[x] ? 'unc ' : '') + (x === S.sel.date ? 'sel ' : '') + (isWorkday(x) ? '' : 'we ') + (can ? 'pick' : '') + '"' + (can ? ' data-day="' + x + '"' : '') + '>' + (+x.slice(8)) + '</th>';
-  }).join('') + '</tr></thead><tbody>';
+  }).join('') + monTh() + '</tr></thead><tbody>';
   if (isGroupDaily()) {
     d.items.filter(it => grpKind(it)).forEach(it => {
       const rowsG = grpKind(it) === 'used' ? d.members.map(mm => ['使用：' + mm.no + ' ' + mm.name, mm.no]) : [[it.name.replace(/（.*$/, ''), '']];
@@ -2243,10 +2285,11 @@ function renderSheet(ro, unc, onPick) {
       const out = mk && mk.num !== '' && judgeNum(it, mk.num) === 'out';
       const cls = (x === S.sel.date ? 'sel ' : '') + (isWorkday(x) ? '' : 'we ') + (out || (mk && mk.mark === '×') ? 'x' : mk && mk.mark === '△' ? 'tri' : '');
       return '<td class="' + cls + (offSlash(x) ? ' sl' : '') + '">' + (offSlash(x) ? '／' : esc(val)) + '</td>';
-    }).join('') + '</tr>';
+    }).join('') + monTd(it) + '</tr>';
   });
-  h += '<tr><th class="it">担当者</th>' + days.map(x => '<td class="' + (x === S.sel.date ? 'sel ' : '') + (isWorkday(x) ? '' : 'we') + '">' + (d.days[x] && d.days[x].rest ? '<span class="rest">休</span>' : d.days[x] ? hankoImg((d.stamps || {})[d.days[x].by], d.days[x].by, 18) : offSlash(x) ? '<span class="sl">／</span>' : '') + '</td>').join('') + '</tr>';
-  h += '<tr><th class="it">管理監督者</th>' + days.map(x => '<td class="ok ' + (unc[x] ? 'unc ' : '') + (x === S.sel.date ? 'sel ' : '') + (isWorkday(x) ? '' : 'we') + '">' + (d.confirmed[x] ? hankoImg((d.stamps || {})[d.confirmed[x].by], d.confirmed[x].by, 18) : offSlash(x) || (d.days[x] || {}).rest ? '<span class="sl">／</span>' : '') + '</td>').join('') + '</tr></tbody>';
+  h += '<tr><th class="it">担当者</th>' + days.map(x => '<td class="' + (x === S.sel.date ? 'sel ' : '') + (isWorkday(x) ? '' : 'we') + '">' + (d.days[x] && d.days[x].rest ? '<span class="rest">休</span>' : d.days[x] ? hankoImg((d.stamps || {})[d.days[x].by], d.days[x].by, 18) : offSlash(x) ? '<span class="sl">／</span>' : '') + '</td>').join('') + (d.hasMonthly ? '<td class="mon">' + (mo.by ? hankoImg((d.stamps || {})[mo.by], mo.by, 18) : '') + '</td>' : '') + '</tr>';
+  if (!d.route || d.route.checker) h += '<tr><th class="it">管理監督者</th>' + days.map(x => '<td class="ok ' + (unc[x] ? 'unc ' : '') + (x === S.sel.date ? 'sel ' : '') + (isWorkday(x) ? '' : 'we') + '">' + (d.confirmed[x] ? hankoImg((d.stamps || {})[d.confirmed[x].by], d.confirmed[x].by, 18) : offSlash(x) || (d.days[x] || {}).rest ? '<span class="sl">／</span>' : '') + '</td>').join('') + (d.hasMonthly ? '<td class="mon"></td>' : '') + '</tr>';
+  h += '</tbody>';
   $('#sheet').innerHTML = h;
   $('#sheet').querySelectorAll('[data-day]').forEach(th => th.addEventListener('click', () => { if (onPick) { onPick(th.dataset.day); return; } loadDay(th.dataset.day); renderDaily(); }));
 }
