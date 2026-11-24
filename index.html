@@ -1010,6 +1010,8 @@ table.bkc{border-collapse:separate;border-spacing:0;width:100%;min-width:1100px}
 .mn-foot{padding-top:6px}
 .mn-empty{background:var(--surface);border:1.5px dashed var(--line);padding:22px;text-align:center;color:var(--muted)}
 @media (max-width:820px){.mn-band{grid-template-columns:minmax(0,1fr)}.mn-mc{grid-template-columns:minmax(0,1fr) auto auto}.mn-mc .mn-cal{grid-column:1/-1;order:3}.mn-row{grid-template-columns:minmax(0,1fr) auto}}
+/* 週に1回の項目（v0.25.0） */
+.hint.wk{background:var(--ai-soft);padding:4px 8px;border-radius:3px}
 </style>
 
 
@@ -1079,7 +1081,7 @@ img.rail-mark.qms-icon{background:transparent;object-fit:contain;padding:0}
 <div class="busy" id="busy" hidden><span>処理中…</span></div>
 
 <script>
-window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.24.3" };
+window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.25.0" };
 var qmsToken = null, qmsStarted = false;
 // IDトークンの中身はUTF-8（表示用だけに使う。だれかの判定はGAS側でトークンを確かめて得たメールだけを使う）
 function qmsDecode_(str){
@@ -1159,7 +1161,18 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&a
 const WD = ['日', '月', '火', '水', '木', '金', '土'];
 // 問題なしの記号は帳票ごと（項目定義の選択肢の1つ目。始業前点検はレ、作業環境点検は○、v0.23.0）。選択肢にない記号は出さない
 // 記号の説明：問題なしが ○ の帳票（作業環境点検）は様式の言葉に合わせる（v0.23.3、ユーザー指示）
-function markLbl(ok, m, dflt) { return ok === '○' ? ({ '△': '清掃などをした', '×': '修理などが必要', '／': '点検なし' })[m] || dflt : dflt; }
+function envForm() { const f = (S.daily && S.daily.form) || (S.multi && S.multi.form) || {}; return Number(f.no) === 21; } // 作業環境点検だけ様式の言葉
+// 週に1回の項目（No.22 表面性状測定器の精度確認、v0.25.0）：測らない日は空欄のまま（提出すると／）
+function isWeekly(it) { return /週1回/.test(String((it || {}).kind || '')); }
+function blankNum(v) { return v === undefined || v === null || !String(v).trim(); }
+// その日の週（月〜日）にこの項目を測った日
+function weekDone(it, date) {
+  const d0 = new Date(date + 'T00:00:00'), mon = new Date(d0); mon.setDate(d0.getDate() - ((d0.getDay() + 6) % 7));
+  const out = [];
+  for (let i = 0; i < 7; i++) { const x = new Date(mon); x.setDate(mon.getDate() + i); const ds = x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); const dy = (S.daily.days || {})[ds], mk = dy && dy.marks[it.no]; if (mk && mk.num !== '' && mk.num != null) out.push(ds); }
+  return out;
+}
+function markLbl(ok, m, dflt) { return ok === '○' && envForm() ? ({ '△': '清掃などをした', '×': '修理などが必要', '／': '点検なし' })[m] || dflt : dflt; }
 function noRunLbl(ok) { return ok === '○' ? '点検なし' : '稼働なし'; }
 function okM() { return (S.daily && S.daily.ok) || 'レ'; }
 function dayMarks(it) { const ok = okM(), o = it.options || []; const base = [[ok, '問題なし', 'ok']].concat(MARKS.slice(1)).filter(m => !o.length || o.indexOf(m[0]) >= 0).map(m => [m[0], markLbl(ok, m[0], m[1]), m[2]]); return ok !== '○' && o.indexOf('○') >= 0 ? base.concat([['○', '交換した', 'ok']]) : base; }
@@ -1678,7 +1691,7 @@ function mtCheck(mc) {
   const names = [], short = it => it.name.replace(/（.*$/, '');
   S.multi.items.forEach(it0 => {
     const it = mtItem(it0, mc), mk = s.marks[it.no];
-    if (isDoItem(it)) return;
+    if (isDoItem(it) || (isWeekly(it) && !mk && blankNum(s.nums[it.no]))) return;
     if (!mk) { left++; names.push(short(it)); return; }
     if (isNumItem(it) && mk !== '／' && mk !== '━') {
       const j = judgeNum(it, s.nums[it.no]);
@@ -1725,7 +1738,7 @@ function mtCellInner(mc, it0) {
   const j = isNumItem(it) ? judgeNum(it, num) : '';
   if (it.fixed) return '<div class="mt-bs"><button type="button" class="mt-b" aria-pressed="true" disabled title="設備なし" aria-label="' + esc(mc.label + ' ' + it.name) + ' 設備なし（固定）">━</button></div><span class="mt-fixed">設備なし</span>';
   const marks = isDoItem(it) ? [[doMark(it), '実施した', '']] : mtMarksFor(it);
-  const btns = '<div class="mt-bs">' + marks.map(mk => '<button type="button" class="mt-b ' + mk[2] + '" data-m="' + esc(mc.no) + '" data-no="' + it.no + '" data-v="' + mk[0] + '" aria-pressed="' + (cur === mk[0]) + '" title="' + mk[1] + '" aria-label="' + esc(mc.label + ' ' + it.name + ' ' + mk[1]) + '"' + (!ed || (mk[0] === 'レ' && j === 'out' && !isDoItem(it)) ? ' disabled' : '') + '>' + mk[0] + '</button>').join('') + '</div>';
+  const btns = '<div class="mt-bs">' + marks.map(mk => '<button type="button" class="mt-b ' + mk[2] + '" data-m="' + esc(mc.no) + '" data-no="' + it.no + '" data-v="' + mk[0] + '" aria-pressed="' + (cur === mk[0]) + '" title="' + mk[1] + '" aria-label="' + esc(mc.label + ' ' + it.name + ' ' + mk[1]) + '"' + (!ed || (mk[0] === mtOk() && j === 'out' && !isDoItem(it)) ? ' disabled' : '') + '>' + mk[0] + '</button>').join('') + '</div>';
   const jm = j === 'in' ? '<span class="mt-jm in">範囲内</span>' : j === 'out' ? '<span class="mt-jm out">範囲外（' + esc(rangeOf(it).text) + '）</span>' : '';
   return (isNumItem(it) ? '<div class="mt-num"><input class="mt-in' + (j === 'in' ? ' in' : j === 'out' ? ' out' : '') + '" id="mt-' + esc(mc.no) + '-' + it.no + '" data-m="' + esc(mc.no) + '" data-no="' + it.no + '" inputmode="decimal" value="' + esc(num) + '" placeholder="0.0" aria-label="' + esc(mc.label + ' ' + it.name) + 'の数値"' + (ed ? '' : ' disabled') + '><small>' + esc(it.unit || '') + '</small></div><div class="mt-jmw">' + jm + '</div>' : '') + btns;
 }
@@ -1802,7 +1815,7 @@ function mtMiss() {
       const td = document.querySelector('[data-cell="' + String(mc.no + '-' + it0.no).replace(/"/g, '\\"') + '"]'); if (!td) return;
       const it = mtItem(it0, mc);
       let miss = '';
-      if (on && !isDoItem(it) && !it.fixed) {
+      if (on && !isDoItem(it) && !it.fixed && !(isWeekly(it) && !s.marks[it.no] && blankNum(s.nums[it.no]))) {
         const mk = s.marks[it.no];
         if (!mk) miss = '未入力';
         else if (isNumItem(it) && mk !== '／' && mk !== '━' && !judgeNum(it, s.nums[it.no])) miss = '数値が未入力';
@@ -1845,7 +1858,7 @@ function mtAllOk(mcNo) {
   let skipped = 0;
   S.multi.items.forEach(it0 => {
     const it = mtItem(it0, mc);
-    if (isDoItem(it) || it.fixed) return;
+    if (isDoItem(it) || it.fixed || isWeekly(it)) return;
     if (isNumItem(it) && judgeNum(it, s.nums[it.no]) === 'out') { skipped++; return; } // 範囲外はレにしない
     if (s.marks[it.no] === '／' || s.marks[it.no] === '━') delete s.marks[it.no];
     if (!s.marks[it.no] || s.marks[it.no] === mtOk()) s.marks[it.no] = mtOk();
@@ -1901,7 +1914,7 @@ async function mtRest(no) {
 async function mtSubmit() {
   const d = S.multi, list = d.machines.filter(mtReady).map(mc => {
     const s = S.msel[mc.no], marks = {};
-    d.items.forEach(it => { marks[it.no] = { mark: s.marks[it.no] || (isDoItem(it) ? '／' : ''), num: s.nums[it.no] !== undefined ? String(s.nums[it.no]) : '' }; });
+    d.items.forEach(it => { marks[it.no] = { mark: s.marks[it.no] || (isDoItem(it) || isWeekly(it) ? '／' : ''), num: s.nums[it.no] !== undefined ? String(s.nums[it.no]) : '' }; });
     return { formNo: d.form.no, machineNo: mc.no, date: d.date, marks: marks, note: s.note };
   });
   if (!list.length) return;
@@ -2120,7 +2133,7 @@ function renderDaily() {
     return '<div class="item"><span class="n">' + (it.no - 2) + '</span><div class="label">' + esc(it.name) + '</div>' +
       (it.note ? '<div class="hint">' + esc(it.note) + '</div>' : '') +
       (fx ? '<div class="hint"><b>この機械には設備がないため「━ 設備なし」で固定です</b>（設備台帳の点検の設定で変えられます）</div>' : '') +
-      (rg ? '<div class="hint"><b>数値は必須</b>' + (rg.has ? '　範囲：' + esc(rg.text) + '（範囲外のときは「レ」を選べません）' : '') + '</div>' : '') +
+      (isWeekly(it) && !fx ? (() => { const w = weekDone(it, sel.date); return '<div class="hint wk"><b>週に1回</b>　測らない日は空欄のまま提出（／になります）。今週：' + (w.length ? w.map(x => (+x.slice(5, 7)) + '/' + (+x.slice(8))).join('・') + ' に測定済み' : '<b class="ng">まだ測っていません</b>') + (rg && rg.has ? '　範囲：' + esc(rg.text) : '') + '</div>'; })() : rg ? '<div class="hint"><b>数値は必須</b>' + (rg.has ? '　範囲：' + esc(rg.text) + '（範囲外のときは「レ」を選べません）' : '') + '</div>' : '') +
       '<div class="ctrl" data-no="' + it.no + '">' + numBox +
       (fx ? [['━', '設備なし', 'na']] : isDoItem(it) ? [[doMark(it), '実施した', 'ok']] : dayMarks(it)).map(m => '<button type="button" class="mark ' + m[2] + '" data-m="' + m[0] + '" aria-pressed="' + (sel.marks[it.no] === m[0]) + '"' + (locked || fx ? ' disabled' : '') + '><b>' + m[0] + '</b><small>' + m[1] + '</small></button>').join('') +
       (isDoItem(it) ? '<small class="do-hint">実施した日だけ押します（もう一度押すと取り消し）</small>' : '') +
@@ -2146,7 +2159,7 @@ function renderDaily() {
     '<div class="notes"><label for="note"><b>' + esc(noteItem ? noteItem.name : '備考') + '</b>　<small style="color:var(--muted)">△・×をつけたときは内容を書いてください</small></label><textarea id="note"' + (locked ? ' disabled' : '') + ' placeholder="' + esc(notePh(f.no)) + '">' + esc((d.days[sel.date] || {}).rest ? '' : sel.note) + '</textarea></div>' +
     (locked ? '' : '<div class="submit-bar"><small>担当者：' + esc(d.me) + '（自動で入ります）</small><div style="display:flex;gap:10px;flex-wrap:wrap"><button type="button" class="btn" id="noRun">この日は' + noRunLbl(okM()) + '（／）</button><button type="submit" class="btn primary big">提出する</button></div></div>') +
     '</form><div class="panel"><div class="panel-head"><h2>' + esc(d.machine.label) + '　' + esc(d.ym) + '</h2><small style="color:var(--muted)">日付をタップすると、その日を開きます</small></div><div class="sheet-wrap"><table class="sheet" id="sheet"></table></div>' +
-    '<div class="rules"><div>' + (okM() === '○' ? '<b>○</b> 問題なし　<b>△</b> 異常を見つけ清掃などをした　<b>×</b> 修理などが必要　<b>／</b> 休日・点検なし　<b>休</b> 担当者が休み' : '<b>' + okM() + '</b> 確認済・問題なし　<b>△</b> 調整・修理した　<b>×</b> メーカー修理などが必要　<b>／</b> 休日・稼働なし　<b>━</b> その設備がない　<b>休</b> 担当者が休み') + '</div>' +
+    '<div class="rules"><div>' + (okM() === '○' && envForm() ? '<b>○</b> 問題なし　<b>△</b> 異常を見つけ清掃などをした　<b>×</b> 修理などが必要　<b>／</b> 休日・点検なし　<b>休</b> 担当者が休み' : '<b>' + okM() + '</b> 確認済・問題なし　<b>△</b> 調整・修理した　<b>×</b> メーカー修理などが必要　<b>／</b> 休日・稼働なし　<b>━</b> その設備がない　<b>休</b> 担当者が休み') + '</div>' +
     '<div>確認：' + esc(d.route.checker || '―') + '（管理監督者）　承認：' + esc(d.route.approver || '―') + '（' + esc(d.route.timing) + '）</div>' +
     (d.notes || []).map(n => '<div>' + (n.head ? '<b>' + esc(n.head) + '</b> ' : '') + esc(n.text) + '</div>').join('') +
     '</div></div></div>';
@@ -2179,7 +2192,7 @@ function renderDaily() {
   }));
   $('#v-entry').querySelectorAll('.num input').forEach(inp => inp.addEventListener('input', () => { S.sel.nums[inp.dataset.no] = inp.value; validateNum(inp.dataset.no, true); dayMiss(); }));
   $('#note').addEventListener('input', e => { S.sel.note = e.target.value; });
-  $('#allOk').addEventListener('click', () => { checkItems().filter(it => !isDoItem(it) && !it.fixed).forEach(it => { S.sel.marks[it.no] = okM(); }); renderDaily(); toast('すべて「問題なし」にしました。違うところだけ直してください'); });
+  $('#allOk').addEventListener('click', () => { checkItems().filter(it => !isDoItem(it) && !it.fixed && !isWeekly(it)).forEach(it => { S.sel.marks[it.no] = okM(); }); renderDaily(); toast('すべて「問題なし」にしました。違うところだけ直してください'); });
   $('#restBtn').addEventListener('click', async () => { const r = await restDay(f.no, d.machine.no, sel.date); if (!r) return; toast('休みとして記録しました'); await openDaily(f.no, d.machine.no, d.ym, sel.date, r.sheet); boot(true); });
   $('#noRun').addEventListener('click', () => { checkItems().forEach(it => { if (it.fixed) return; if (isDoItem(it)) delete S.sel.marks[it.no]; else S.sel.marks[it.no] = '／'; }); S.sel.nums = {}; submitDay('稼働なしとして記録しました'); });
   $('#dayForm').addEventListener('submit', e => { e.preventDefault(); submitDay('提出しました'); });
@@ -2196,7 +2209,7 @@ function validateNum(no, typed) {
   const ok = document.querySelector('.ctrl[data-no="' + no + '"] .mark[data-m="レ"]');
   if (ok && S.daily.state !== '承認済み') {
     ok.disabled = j === 'out';
-    if (j === 'out' && S.sel.marks[no] === 'レ') {
+    if (j === 'out' && S.sel.marks[no] === okM()) {
       delete S.sel.marks[no];
       ok.setAttribute('aria-pressed', 'false');
       refreshAlerts();
@@ -2208,9 +2221,9 @@ function validateNum(no, typed) {
       const ctrl = document.querySelector('.ctrl[data-no="' + no + '"]');
       const press = m => ctrl.querySelectorAll('.mark').forEach(x => x.setAttribute('aria-pressed', x.dataset.m === m));
       if (j === 'in' && (!S.sel.marks[no] || S.sel.autoOk[no])) {
-        S.sel.marks[no] = 'レ'; S.sel.autoOk[no] = true; press('レ'); refreshAlerts();
+        S.sel.marks[no] = okM(); S.sel.autoOk[no] = true; press(okM()); refreshAlerts();
       } else if (j !== 'in' && S.sel.autoOk[no]) {
-        if (S.sel.marks[no] === 'レ') { delete S.sel.marks[no]; press(''); refreshAlerts(); }
+        if (S.sel.marks[no] === okM()) { delete S.sel.marks[no]; press(''); refreshAlerts(); }
         delete S.sel.autoOk[no];
       }
     }
@@ -2224,7 +2237,7 @@ function dayMiss() {
     const c = document.querySelector('.ctrl[data-no="' + it.no + '"]'); if (!c) return;
     const box = c.closest('.item');
     let miss = '';
-    if (on && !it.fixed && !isDoItem(it)) {
+    if (on && !it.fixed && !isDoItem(it) && !(isWeekly(it) && !sel.marks[it.no] && blankNum(sel.nums[it.no]))) {
       const mk = sel.marks[it.no];
       if (!mk) miss = '未入力';
       else if (isNumItem(it) && mk !== '／' && mk !== '━' && !judgeNum(it, sel.nums[it.no])) miss = '数値が未入力';
@@ -2242,20 +2255,21 @@ async function submitDay(msg) {
   if (S.sel.date === 'monthly') return submitMonthly();
   const d = S.daily, sel = S.sel;
   const items = checkItems();
-  const missing = items.filter(it => !isDoItem(it) && !sel.marks[it.no]);
+  const missing = items.filter(it => !isDoItem(it) && !sel.marks[it.no] && !(isWeekly(it) && blankNum(sel.nums[it.no])));
   if (missing.length) { toast('まだ選んでいない項目があります（' + missing.map(it => it.no - 2).join('・') + '番）', true); return; }
   for (const it of items.filter(isNumItem)) {
     const mk = sel.marks[it.no];
     if (mk === '／' || mk === '━') continue;
+    if (isWeekly(it) && !mk && blankNum(sel.nums[it.no])) continue; // 週に1回の項目は、測らない日は空欄でよい
     const j = judgeNum(it, sel.nums[it.no]);
     if (!j) { toast('「' + it.name.replace(/（.*$/, '') + '」の数値を入れてください', true); const el = $('#num' + it.no); if (el) el.focus(); return; }
-    if (j === 'out' && mk === 'レ') { toast('「' + it.name.replace(/（.*$/, '') + '」は範囲外なので、△か×を選んでください', true); return; }
+    if (j === 'out' && mk === okM()) { toast('「' + it.name.replace(/（.*$/, '') + '」は範囲外なので、△か×を選んでください', true); return; }
   }
   const v = items.map(it => sel.marks[it.no]);
   if ((v.indexOf('×') >= 0 || v.indexOf('△') >= 0) && !String(sel.note).trim()) { toast('△・×があるので、備考に内容を書いてください', true); $('#note').focus(); return; }
   const marks = {};
   // 「実施」の項目で押さなかったもの（実施しなかった日）は ／ を入れる
-  items.forEach(it => { marks[it.no] = { mark: sel.marks[it.no] || (isDoItem(it) ? '／' : sel.marks[it.no]), num: sel.nums[it.no] !== undefined ? String(sel.nums[it.no]) : '' }; });
+  items.forEach(it => { marks[it.no] = { mark: sel.marks[it.no] || (isDoItem(it) || isWeekly(it) ? '／' : sel.marks[it.no]), num: sel.nums[it.no] !== undefined ? String(sel.nums[it.no]) : '' }; });
   let r;
   try { r = await run('saveDaily', { formNo: d.form.no, machineNo: d.machine.no, date: sel.date, marks: marks, note: sel.note }, S.asEmail); } catch (e) { return; }
   toast(msg + (r.reconfirm ? '（確認済みの日を直したので、確認をやり直してもらいます）' : ''));
