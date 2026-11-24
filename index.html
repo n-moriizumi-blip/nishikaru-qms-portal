@@ -1012,6 +1012,16 @@ table.bkc{border-collapse:separate;border-spacing:0;width:100%;min-width:1100px}
 @media (max-width:820px){.mn-band{grid-template-columns:minmax(0,1fr)}.mn-mc{grid-template-columns:minmax(0,1fr) auto auto}.mn-mc .mn-cal{grid-column:1/-1;order:3}.mn-row{grid-template-columns:minmax(0,1fr) auto}}
 /* 週に1回の項目（v0.25.0） */
 .hint.wk{background:var(--ai-soft);padding:4px 8px;border-radius:3px}
+/* 改訂履歴（v0.26.1） */
+.rev-btn{font-size:12px;margin-left:6px;font-family:var(--f-body)}
+.ask.rev-box{width:min(920px,100%)}
+.rev-box h3{margin:0 0 2px;font-family:var(--f-display);font-size:19px}
+.rev-sub{color:var(--muted);font-size:13px;margin-bottom:12px}
+.rev-wrap{overflow-x:auto;max-height:60vh;margin-bottom:16px}
+.rev-tbl{width:100%;font-size:13px}
+.rev-tbl tr.cur td{background:var(--ai-soft)}
+.rev-tag{display:inline-block;margin-left:6px;font-size:11px;font-weight:700;padding:1px 6px;border-radius:2px;white-space:nowrap}
+.rev-tag.cur{background:var(--ai);color:#fff}.rev-tag.fut{background:#FBF0DC;color:var(--warn)}
 </style>
 
 
@@ -1081,7 +1091,7 @@ img.rail-mark.qms-icon{background:transparent;object-fit:contain;padding:0}
 <div class="busy" id="busy" hidden><span>処理中…</span></div>
 
 <script>
-window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.26.0" };
+window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.26.1" };
 var qmsToken = null, qmsStarted = false;
 // IDトークンの中身はUTF-8（表示用だけに使う。だれかの判定はGAS側でトークンを確かめて得たメールだけを使う）
 function qmsDecode_(str){
@@ -1174,6 +1184,29 @@ function weekDone(it, date) {
 }
 function markLbl(ok, m, dflt) { return ok === '○' && envForm() ? ({ '△': '清掃などをした', '×': '修理などが必要', '／': '点検なし' })[m] || dflt : dflt; }
 function noRunLbl(ok) { return ok === '○' ? '点検なし' : '稼働なし'; }
+// 改訂履歴（v0.26.1）：管理番号の横の「改訂履歴」を押すと、画面の中央にその帳票の改訂の一覧（帳票マスタ「改訂履歴（様式の承認）」）
+function revBtn(no) { return '<button type="button" class="linkbtn rev-btn" data-rev="' + no + '">改訂履歴</button>'; }
+async function showRevisions(no) {
+  let d;
+  try { d = await run('getRevisions', no); } catch (e) { return; }
+  const cur = d.rows.filter(r => !r.applied || r.applied <= d.today).slice(-1)[0];
+  const bg = document.createElement('div');
+  bg.className = 'ask-bg';
+  bg.innerHTML = '<div class="ask rev-box" role="dialog" aria-modal="true" aria-labelledby="revT"><h3 id="revT"></h3><div class="rev-sub"></div><div class="rev-wrap"><table class="rec rev-tbl"><thead><tr><th>版</th><th>制定・改訂日</th><th>改訂内容</th><th>適用日</th><th>承認</th><th>照査</th><th>作成</th></tr></thead><tbody></tbody></table></div><div class="ask-btns"><button type="button" class="btn primary" data-a="0">閉じる</button></div></div>';
+  bg.querySelector('h3').textContent = 'No.' + d.form.no + '　' + d.form.name + '　改訂履歴';
+  bg.querySelector('.rev-sub').textContent = '管理番号 ' + d.form.code + '　（帳票マスタ「改訂履歴（様式の承認）」より）';
+  bg.querySelector('tbody').innerHTML = d.rows.length ? d.rows.slice().reverse().map(r => {
+    const future = r.applied && r.applied > d.today, isCur = r === cur;
+    return '<tr class="' + (isCur ? 'cur' : '') + '"><td class="mono"><b>' + esc(r.ver || '') + '</b>' + (isCur ? '<span class="rev-tag cur">いまの版</span>' : future ? '<span class="rev-tag fut">' + (+r.applied.slice(5, 7)) + '/' + (+r.applied.slice(8, 10)) + 'から</span>' : '') + '</td><td>' + esc(r.date || '') + '</td><td>' + esc(r.what || '') + '</td><td>' + esc(r.applied || '') + '</td><td>' + esc(r.approver || '') + '</td><td>' + esc(r.checker || '') + '</td><td>' + esc(r.maker || '') + '</td></tr>';
+  }).join('') : '<tr><td colspan="7" class="empty">改訂履歴はまだありません</td></tr>';
+  const done = () => { document.removeEventListener('keydown', key); bg.remove(); };
+  const key = e => { if (e.key === 'Escape') done(); };
+  bg.addEventListener('click', e => { if (e.target === bg || e.target.closest('[data-a]')) done(); });
+  document.addEventListener('keydown', key);
+  document.body.appendChild(bg);
+  bg.querySelector('[data-a]').focus();
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-rev]'); if (!b) return; e.preventDefault(); e.stopPropagation(); showRevisions(+b.dataset.rev); }, true);
 function okM() { return (S.daily && S.daily.ok) || 'レ'; }
 function dayMarks(it) { const ok = okM(), o = it.options || []; const base = [[ok, '問題なし', 'ok']].concat(MARKS.slice(1)).filter(m => !o.length || o.indexOf(m[0]) >= 0).map(m => [m[0], markLbl(ok, m[0], m[1]), m[2]]); return ok !== '○' && o.indexOf('○') >= 0 ? base.concat([['○', '交換した', 'ok']]) : base; }
 function mtOk() { return (S.multi && S.multi.ok) || 'レ'; }
@@ -1473,7 +1506,7 @@ function renderFormList() {
       const act = off ? '' : f.web ? (f.no === 10 ? '<button class="btn" data-ledger="1">台帳を見る</button> ' : '') + '<button class="btn primary" data-form="' + f.no + '">記入する</button>'
         : f.ext && f.extUrl ? '<a class="linkbtn" href="' + esc(f.extUrl) + '" target="_blank" rel="noopener">アプリを開く ↗</a>'
         : '<span class="code">' + (f.ext ? '別アプリで記入' : '紙の様式を使用') + '</span>';
-      return '<div class="form-row"><span class="no">' + String(f.no).padStart(2, '0') + '</span><div class="nm"><div class="name">' + esc(f.name) + '</div><div class="code mono">' + esc(f.code) + '</div></div><span class="kind">' + kind + '</span><span class="freq">' + esc(f.freq) + '</span><span class="act">' + act + '</span></div>';
+      return '<div class="form-row"><span class="no">' + String(f.no).padStart(2, '0') + '</span><div class="nm"><div class="name">' + esc(f.name) + '</div><div class="code mono">' + esc(f.code) + ' ' + revBtn(f.no) + '</div></div><span class="kind">' + kind + '</span><span class="freq">' + esc(f.freq) + '</span><span class="act">' + act + '</span></div>';
     }).join('') + '</div>';
   }).join('');
   $('#formList').querySelectorAll('[data-form]').forEach(b => b.addEventListener('click', () => openEntry(+b.dataset.form)));
@@ -2011,7 +2044,7 @@ function renderGroupDaily() {
   const left = gLeft();
   $('#v-entry').innerHTML =
     '<div class="doc-head"><div><div class="eyebrow">' + esc(f.cat) + ' ・ ' + esc(f.freq) + '</div><h1>' + esc(f.name) + '</h1>' +
-    '<div class="doc-meta"><span>管理番号 <span class="mono">' + esc(f.code) + '</span></span><span>版 <span class="mono">' + esc(f.ver) + '</span></span><span>' + esc(f.rule) + '</span><span>機械：' + esc(d.members.map(m => m.no + ' ' + m.name).join('／')) + '</span></div></div>' +
+    '<div class="doc-meta"><span>管理番号 <span class="mono">' + esc(f.code) + '</span> ' + revBtn(f.no) + '</span><span>版 <span class="mono">' + esc(f.ver) + '</span></span><span>' + esc(f.rule) + '</span><span>機械：' + esc(d.members.map(m => m.no + ' ' + m.name).join('／')) + '</span></div></div>' +
     '<div class="pickers"><label class="picker" for="ymSel">月<input id="ymSel" type="month" value="' + esc(d.ym) + '" max="' + esc(d.today.slice(0, 7)) + '"></label></div></div>' +
     (d.returnComment ? '<div class="alert" style="margin:0 0 16px"><b>差し戻されました：</b>' + esc(d.returnComment) + '<br>直したい日を選んで記入し直してください。</div>' : '') +
     (d.state === '承認済み' ? '<div class="info" style="margin:0 0 16px">この月の記録は承認済みです（' + esc(d.route.approver) + '）。見るだけで、変更はできません。</div>' : locked ? '<div class="info" style="margin:0 0 16px">' + esc(d.machine.label) + ' の担当（' + esc(d.machine.inspector || '担当なし') + '）ではないため、見るだけです。担当を変えるときは設備台帳の「点検する人」を直してください。</div>' : '') +
@@ -2142,7 +2175,7 @@ function renderDaily() {
 
   $('#v-entry').innerHTML =
     '<div class="doc-head"><div><div class="eyebrow">' + esc(f.cat) + ' ・ ' + esc(f.freq) + '</div><h1>' + esc(f.name) + '</h1>' +
-    '<div class="doc-meta"><span>管理番号 <span class="mono">' + esc(f.code) + '</span></span><span>版 <span class="mono">' + esc(f.ver) + '</span></span><span>' + esc(f.rule) + '</span><span>' + esc(f.keep ? f.keep + '保管' : '') + '</span></div></div>' +
+    '<div class="doc-meta"><span>管理番号 <span class="mono">' + esc(f.code) + '</span> ' + revBtn(f.no) + '</span><span>版 <span class="mono">' + esc(f.ver) + '</span></span><span>' + esc(f.rule) + '</span><span>' + esc(f.keep ? f.keep + '保管' : '') + '</span></div></div>' +
     '<div class="pickers"><label class="picker" for="mcSel">機械<select id="mcSel">' + [['自分の担当', d.machines.filter(m => m.mine)], ['ほかの機械', d.machines.filter(m => !m.mine)]].filter(g => g[1].length).map(g => '<optgroup label="' + g[0] + '">' + g[1].map(m => '<option value="' + esc(m.no) + '"' + (m.no === d.machine.no ? ' selected' : '') + '>' + esc(m.label) + '（' + esc(m.inspector || '担当なし') + '）</option>').join('') + '</optgroup>').join('') + '</select></label>' +
     '<label class="picker" for="ymSel">月<input id="ymSel" type="month" value="' + esc(d.ym) + '" max="' + esc(d.today.slice(0, 7)) + '"></label>' +
     (d.machines.filter(m => m.mine).length >= 2 ? '<button type="button" class="btn mt-multi-link" id="toMulti">担当の' + d.machines.filter(m => m.mine).length + '台をまとめて記入</button>' : '') + '</div></div>' +
@@ -2383,7 +2416,7 @@ function renderGeneric() {
   const route = g.def.route;
   $('#v-entry').innerHTML =
     '<div class="doc-head"><div><div class="eyebrow">' + esc(f.cat) + ' ・ ' + esc(f.freq) + '</div><h1>' + esc(f.name) + '</h1>' +
-    '<div class="doc-meta"><span>管理番号 <span class="mono">' + esc(f.code) + '</span></span><span>版 <span class="mono">' + esc(f.ver) + '</span></span><span>' + esc(f.rule) + '</span></div></div></div>' +
+    '<div class="doc-meta"><span>管理番号 <span class="mono">' + esc(f.code) + '</span> ' + revBtn(f.no) + '</span><span>版 <span class="mono">' + esc(f.ver) + '</span></span><span>' + esc(f.rule) + '</span></div></div></div>' +
     (g.rec && g.rec.returnComment ? '<div class="alert" style="margin:0 0 16px"><b>差し戻されました：</b>' + esc(g.rec.returnComment) + '</div>' : '') +
     '<div class="gen-grid"><form id="genForm" novalidate>' +
     secs.map(([title, items], i) => '<section class="gen-sec" id="gs' + i + '"><div class="gen-sec-h">' + (secs.length > 1 ? '<span class="n">' + CIRCLED.charAt(i) + '</span>' : '') + '<b>' + esc(title) + '</b><small id="gsc' + i + '"></small></div><div class="gen-sec-b">' +
@@ -3396,7 +3429,7 @@ function renderIjou() {
   const sec = (i, title, body) => '<section class="gen-sec" id="ijs' + i + '"><div class="gen-sec-h"><span class="n">' + '①②③④'.charAt(i) + '</span><b>' + esc(title) + '</b><small id="ijsc' + i + '"></small></div><div class="gen-sec-b">' + body + '</div></section>';
   $('#v-entry').innerHTML =
     '<div class="doc-head"><div><div class="eyebrow">' + esc(f.cat) + ' ・ 異常があったとき</div><h1>' + esc(f.name) + '</h1>' +
-    '<div class="doc-meta"><span>管理番号 <span class="mono">' + esc(f.code) + '</span></span><span>設備異常アクション手順（QC-01-030）</span><span>' + esc(f.keep ? f.keep + '保管' : '') + '</span><span>' + (fyOfDate(v[IJ.date]) + '年度') + '　<b>No.' + d.n + '</b></span></div></div>' +
+    '<div class="doc-meta"><span>管理番号 <span class="mono">' + esc(f.code) + '</span> ' + revBtn(f.no) + '</span><span>設備異常アクション手順（QC-01-030）</span><span>' + esc(f.keep ? f.keep + '保管' : '') + '</span><span>' + (fyOfDate(v[IJ.date]) + '年度') + '　<b>No.' + d.n + '</b></span></div></div>' +
     '<div class="pickers"><button type="button" class="btn" id="ijYear">年度の台帳を見る</button></div></div>' +
     (d.returnComment ? '<div class="alert" style="margin:0 0 16px"><b>差し戻されました：</b>' + esc(d.returnComment) + '</div>' : '') +
     '<div class="gen-grid"><form id="ijForm" novalidate>' +
@@ -3478,7 +3511,7 @@ async function openIjouYear(fy) {
   const ap = (label, s, can, kind, note) => '<div class="ij-ap"><span>' + label + '</span>' + (s ? dateStamp(s.info, s.date, 64) : can ? '<button class="hanko me" data-yap="' + kind + '">承認<br>押印</button>' : '<div class="hanko"></div>') + '<small>' + esc(note || '') + '</small></div>';
   $('#v-entry').innerHTML =
     '<div class="doc-head"><div><div class="eyebrow">設備点検 ・ 年度の台帳</div><h1>' + esc(d.form.name) + '</h1>' +
-    '<div class="doc-meta"><span>管理番号 <span class="mono">' + esc(d.form.code) + '</span></span><span>' + esc(d.fyLabel) + '</span><span>' + d.rows.length + '件</span></div></div>' +
+    '<div class="doc-meta"><span>管理番号 <span class="mono">' + esc(d.form.code) + '</span> ' + revBtn(d.form.no) + '</span><span>' + esc(d.fyLabel) + '</span><span>' + d.rows.length + '件</span></div></div>' +
     '<div class="pickers"><label class="picker" for="ijFy">年度<select id="ijFy">' + d.years.map(y => '<option value="' + y + '"' + (y === d.fy ? ' selected' : '') + '>' + y + '年度</option>').join('') + '</select></label>' +
     '<button type="button" class="btn" id="ijProc2">手順を見る</button><button type="button" class="btn primary" id="ijNew">新しく記入する</button></div></div>' +
     '<div class="panel"><div class="sheet-wrap"><table class="rec ij-tbl"><thead><tr><th>No.</th><th>発生日</th><th>機種／機番</th><th>異常内容</th><th>異常前</th><th>復旧後</th><th>担当者</th><th>状態</th></tr></thead><tbody>' +
@@ -3612,7 +3645,7 @@ function renderPm() {
   const plan = d.plan ? d.plan.ym.slice(0, 4) + '年' + (+d.plan.ym.slice(5)) + '月予定' : '予定表にない機械';
   $('#v-entry').innerHTML =
     '<div class="doc-head"><div><div class="eyebrow">' + esc(f.cat) + ' ・ 年1回（' + esc(plan) + '）</div><h1>' + esc(f.name) + '</h1>' +
-    '<div class="doc-meta"><span>管理番号 <span class="mono">' + esc(f.code) + '</span></span><span>' + esc(f.rule || '') + '</span><span>' + esc(f.keep ? f.keep + '保管' : '') + '</span><span>' + d.fy + '年度</span></div></div>' +
+    '<div class="doc-meta"><span>管理番号 <span class="mono">' + esc(f.code) + '</span> ' + revBtn(f.no) + '</span><span>' + esc(f.rule || '') + '</span><span>' + esc(f.keep ? f.keep + '保管' : '') + '</span><span>' + d.fy + '年度</span></div></div>' +
     '<div class="pickers"><button type="button" class="btn" id="pmPlanBtn">予定表を見る</button></div></div>' +
     (d.returnComment ? '<div class="alert" style="margin:0 0 16px"><b>差し戻されました：</b>' + esc(d.returnComment) + '</div>' : '') +
     '<div class="gen-grid"><form id="pmForm" novalidate>' +
@@ -3768,7 +3801,7 @@ function renderPmPlan() {
   const yap = (label, s, can, kind, note) => '<div class="ij-ap"><span>' + label + '</span>' + (s ? dateStamp(s.info, s.date, 60) : can ? '<button class="hanko me" data-yap="' + kind + '">承認<br>押印</button>' : '<div class="hanko"></div>') + '<small>' + esc(note || '') + '</small></div>';
   $('#v-entry').innerHTML =
     '<div class="doc-head"><div><div class="eyebrow">設備点検 ・ 年度ごと</div><h1>' + esc(d.form.name) + '</h1>' +
-    '<div class="doc-meta"><span>管理番号 <span class="mono">' + esc(d.form.code) + '</span></span><span>' + d.fy + '年度（' + d.fy + '年6月〜' + (d.fy + 1) + '年5月）</span><span>' + rows.length + '台</span></div></div>' +
+    '<div class="doc-meta"><span>管理番号 <span class="mono">' + esc(d.form.code) + '</span> ' + revBtn(d.form.no) + '</span><span>' + d.fy + '年度（' + d.fy + '年6月〜' + (d.fy + 1) + '年5月）</span><span>' + rows.length + '台</span></div></div>' +
     '<div class="pickers"><label class="picker" for="pmFy">年度<select id="pmFy">' + d.years.map(y => '<option value="' + y + '"' + (y === d.fy ? ' selected' : '') + '>' + y + '年度</option>').join('') + '</select></label>' +
     (d.canEdit && !ed ? '<button type="button" class="btn" id="pmEdit">予定を直す</button>' + (!d.hasNext ? '<button type="button" class="btn" id="pmCopy">次年度を作る（今年度を写す）</button>' : '') : '') +
     (ed ? '' : (d.pdfUrl ? '<a class="btn primary" href="' + esc(d.pdfUrl) + '" target="_blank" rel="noopener">PDFを開く ↗</a><button type="button" class="linkbtn" id="pmPdf">PDFを作り直す</button>' : '<button type="button" class="btn primary" id="pmPdf">PDFを作る</button>')) + '</div></div>' +
