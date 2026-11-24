@@ -1081,7 +1081,7 @@ img.rail-mark.qms-icon{background:transparent;object-fit:contain;padding:0}
 <div class="busy" id="busy" hidden><span>処理中…</span></div>
 
 <script>
-window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.25.1" };
+window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.25.2" };
 var qmsToken = null, qmsStarted = false;
 // IDトークンの中身はUTF-8（表示用だけに使う。だれかの判定はGAS側でトークンを確かめて得たメールだけを使う）
 function qmsDecode_(str){
@@ -1983,7 +1983,7 @@ function gLeft() {
 }
 const gName = no => (S.daily.members.find(m => m.no === no) || {}).name || '';
 function renderGroupDaily() {
-  const d = S.daily, s = S.sel, f = d.form, locked = d.state === '承認済み';
+  const d = S.daily, s = S.sel, f = d.form, locked = d.state === '承認済み' || d.canEnter === false;
   const conf = d.confirmed[s.date];
   const ymDays = daysOf(d.ym).filter(x => x <= d.today);
   const dis = locked ? ' disabled' : '';
@@ -2014,7 +2014,7 @@ function renderGroupDaily() {
     '<div class="doc-meta"><span>管理番号 <span class="mono">' + esc(f.code) + '</span></span><span>版 <span class="mono">' + esc(f.ver) + '</span></span><span>' + esc(f.rule) + '</span><span>機械：' + esc(d.members.map(m => m.no + ' ' + m.name).join('／')) + '</span></div></div>' +
     '<div class="pickers"><label class="picker" for="ymSel">月<input id="ymSel" type="month" value="' + esc(d.ym) + '" max="' + esc(d.today.slice(0, 7)) + '"></label></div></div>' +
     (d.returnComment ? '<div class="alert" style="margin:0 0 16px"><b>差し戻されました：</b>' + esc(d.returnComment) + '<br>直したい日を選んで記入し直してください。</div>' : '') +
-    (locked ? '<div class="info" style="margin:0 0 16px">この月の記録は承認済みです（' + esc(d.route.approver) + '）。見るだけで、変更はできません。</div>' : '') +
+    (d.state === '承認済み' ? '<div class="info" style="margin:0 0 16px">この月の記録は承認済みです（' + esc(d.route.approver) + '）。見るだけで、変更はできません。</div>' : locked ? '<div class="info" style="margin:0 0 16px">' + esc(d.machine.label) + ' の担当（' + esc(d.machine.inspector || '担当なし') + '）ではないため、見るだけです。担当を変えるときは設備台帳の「点検する人」を直してください。</div>' : '') +
     '<div class="entry-grid"><form class="panel" id="gForm" novalidate>' +
     '<div class="panel-head"><label class="picker" for="dateSel" style="color:var(--ink)"><span class="eyebrow">記入する日</span><select id="dateSel">' +
     ymDays.slice().reverse().map(x => '<option value="' + x + '"' + (x === s.date ? ' selected' : '') + '>' + jpDate(x) + (d.days[x] ? '　記入済み' : isWorkday(x) ? '' : '　休日') + '</option>').join('') + '</select></label>' +
@@ -2122,7 +2122,7 @@ function judgeBadge(j) { return j === 'in' ? '<span class="judge ok">範囲内</
 function renderDaily() {
   if (isGroupDaily()) { renderGroupDaily(); return; }
   const d = S.daily, sel = S.sel, f = d.form;
-  const locked = d.state === '承認済み';
+  const locked = d.state === '承認済み' || d.canEnter === false; // 担当でない機械は見るだけ（v0.25.2）
   const conf = d.confirmed[sel.date];
   const ymDays = daysOf(d.ym).filter(x => x <= d.today);
   const noteItem = d.items.find(it => it.name === '備考');
@@ -2147,7 +2147,7 @@ function renderDaily() {
     '<label class="picker" for="ymSel">月<input id="ymSel" type="month" value="' + esc(d.ym) + '" max="' + esc(d.today.slice(0, 7)) + '"></label>' +
     (d.machines.filter(m => m.mine).length >= 2 ? '<button type="button" class="btn mt-multi-link" id="toMulti">担当の' + d.machines.filter(m => m.mine).length + '台をまとめて記入</button>' : '') + '</div></div>' +
     (d.returnComment ? '<div class="alert" style="margin:0 0 16px"><b>差し戻されました：</b>' + esc(d.returnComment) + '<br>直したい日を選んで記入し直してください。</div>' : '') +
-    (locked ? '<div class="info" style="margin:0 0 16px">この月の記録は承認済みです（' + esc(d.route.approver) + '）。見るだけで、変更はできません。</div>' : '') +
+    (d.state === '承認済み' ? '<div class="info" style="margin:0 0 16px">この月の記録は承認済みです（' + esc(d.route.approver) + '）。見るだけで、変更はできません。</div>' : locked ? '<div class="info" style="margin:0 0 16px">' + esc(d.machine.label) + ' の担当（' + esc(d.machine.inspector || '担当なし') + '）ではないため、見るだけです。担当を変えるときは設備台帳の「点検する人」を直してください。</div>' : '') +
     '<div class="entry-grid"><form class="panel" id="dayForm" novalidate>' +
     '<div class="panel-head"><label class="picker" for="dateSel" style="color:var(--ink)"><span class="eyebrow">記入する日</span><select id="dateSel">' + (d.hasMonthly ? '<option value="monthly"' + (sel.date === 'monthly' ? ' selected' : '') + '>月次点検（月に1回・全項目）' + (d.monthly ? '　記入済み' : '') + '</option>' : '') +
     ymDays.slice().reverse().map(x => '<option value="' + x + '"' + (x === sel.date ? ' selected' : '') + '>' + jpDate(x) + (d.days[x] ? '　記入済み' : isWorkday(x) ? '' : '　休日') + '</option>').join('') + '</select></label>' +
