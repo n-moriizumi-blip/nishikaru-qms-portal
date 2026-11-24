@@ -1081,7 +1081,7 @@ img.rail-mark.qms-icon{background:transparent;object-fit:contain;padding:0}
 <div class="busy" id="busy" hidden><span>処理中…</span></div>
 
 <script>
-window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.25.0" };
+window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.25.1" };
 var qmsToken = null, qmsStarted = false;
 // IDトークンの中身はUTF-8（表示用だけに使う。だれかの判定はGAS側でトークンを確かめて得たメールだけを使う）
 function qmsDecode_(str){
@@ -2206,7 +2206,7 @@ function validateNum(no, typed) {
     msg.className = 'num-msg' + (j === 'in' ? ' ok' : '');
     msg.textContent = j === 'in' ? '範囲内' : j === 'out' ? '範囲外（' + rangeOf(it).text + '）' : '';
   }
-  const ok = document.querySelector('.ctrl[data-no="' + no + '"] .mark[data-m="レ"]');
+  const ok = document.querySelector('.ctrl[data-no="' + no + '"] .mark[data-m="' + okM() + '"]'); // 問題なしの記号は帳票ごと（v0.25.1：○の帳票で自動の○が付かなかった）
   if (ok && S.daily.state !== '承認済み') {
     ok.disabled = j === 'out';
     if (j === 'out' && S.sel.marks[no] === okM()) {
