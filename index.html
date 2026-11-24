@@ -1079,7 +1079,7 @@ img.rail-mark.qms-icon{background:transparent;object-fit:contain;padding:0}
 <div class="busy" id="busy" hidden><span>処理中…</span></div>
 
 <script>
-window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.24.2" };
+window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.24.3" };
 var qmsToken = null, qmsStarted = false;
 // IDトークンの中身はUTF-8（表示用だけに使う。だれかの判定はGAS側でトークンを確かめて得たメールだけを使う）
 function qmsDecode_(str){
@@ -2063,7 +2063,7 @@ async function gSubmit() {
 function gCell(it, mk, member) {
   const k = grpKind(it);
   if (!mk) return '';
-  if (k === 'used') return mk.mark === '／' ? '／' : parseNos(mk.text).indexOf(member) >= 0 ? '○' : '';
+  if (k === 'used') return mk.mark === '／' ? '／' : parseNos(mk.text).indexOf(member) >= 0 ? '○' : '／';
   if (k === 'per' || k === 'perx') { const o = parseMk(mk.text), b = Object.keys(o).filter(n => /[△×]/.test(o[n])); return b.length ? b.map(n => o[n] + n).join(' ') : mk.mark; }
   return mk.mark === '／' ? '／' : parseNos(mk.text).join('・');
 }
