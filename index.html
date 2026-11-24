@@ -1056,7 +1056,7 @@ img.rail-mark.qms-icon{background:transparent;object-fit:contain;padding:0}
       <div class="brand-text"><b>QMSポータル</b><span>西軽精機　Ver.<span id="railVer">—</span></span></div>
     </div>
     <button class="nav" data-go="home" aria-current="page"><span class="ic" aria-hidden="true">🏠</span><span class="label">ホーム</span></button>
-    <button class="nav" data-go="entry"><span class="ic" aria-hidden="true">🧑‍🔧</span><span class="label">わたしの担当</span></button>
+    <button class="nav" data-go="entry"><span class="ic" aria-hidden="true">🧑‍🔧</span><span class="label">マイタスク</span></button>
     <button class="nav" data-go="forms"><span class="ic" aria-hidden="true">📚</span><span class="label">帳票一覧</span></button>
     <button class="nav" data-go="approve"><span class="ic" aria-hidden="true">✅</span><span class="label">確認・承認</span><span class="navbadge" id="apBadge" hidden>0</span></button>
     <button class="nav" data-go="records"><span class="ic" aria-hidden="true">🔍</span><span class="label">記録を探す</span></button>
@@ -1092,7 +1092,7 @@ img.rail-mark.qms-icon{background:transparent;object-fit:contain;padding:0}
 <div class="busy" id="busy" hidden><span>処理中…</span></div>
 
 <script>
-window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.26.2" };
+window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.26.3" };
 var qmsToken = null, qmsStarted = false;
 // IDトークンの中身はUTF-8（表示用だけに使う。だれかの判定はGAS側でトークンを確かめて得たメールだけを使う）
 function qmsDecode_(str){
@@ -1329,7 +1329,7 @@ document.addEventListener('click', e => {
   const v = n.dataset.go;
   if (v === 'home') { renderHome(); go('home'); }
   if (v === 'forms') { openForms(); }
-  if (v === 'entry') { openMine(); } // わたしの担当（v0.24.0、旧「記入する」）
+  if (v === 'entry') { openMine(); } // マイタスク（v0.24.0 わたしの担当、v0.26.3 改名、旧「記入する」）
   if (v === 'approve') { openApprovals(); }
   if (v === 'records') { openRecords(); }
 });
@@ -3874,7 +3874,7 @@ function renderMine() {
   const chip = (cls, t) => '<span class="mn-chip ' + cls + '">' + esc(t) + '</span>';
   const md = s => s ? (+s.slice(5, 7)) + '月' + (+s.slice(8, 10)) + '日' : '';
   const any = d.daily.length || d.monthly.length || d.yearly.length || d.drafts.length || d.roles.length;
-  let h = '<div class="eyebrow">わたしの担当</div><h1>' + esc(d.me) + ' さんの担当</h1><p class="hint">' + (+d.ym.slice(0, 4)) + '年' + (+d.ym.slice(5)) + '月 ・ 担当している点検と、確認・承認の役目。押すと記入画面や記録が開きます</p>';
+  let h = '<div class="eyebrow">マイタスク</div><h1>' + esc(d.me) + ' さんの担当</h1><p class="hint">' + (+d.ym.slice(0, 4)) + '年' + (+d.ym.slice(5)) + '月 ・ 担当している点検と、確認・承認の役目。押すと記入画面や記録が開きます</p>';
   if (!any) {
     v.innerHTML = h + '<div class="mn-empty">点検や確認の担当はありません。記入するときは「帳票一覧」から帳票を選んでください。<br><button type="button" class="btn" id="mnForms" style="margin-top:12px">帳票一覧へ</button></div>';
     $('#mnForms').onclick = openForms; return;
