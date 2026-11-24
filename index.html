@@ -1022,6 +1022,7 @@ table.bkc{border-collapse:separate;border-spacing:0;width:100%;min-width:1100px}
 .rev-tbl tr.cur td{background:var(--ai-soft)}
 .rev-tag{display:inline-block;margin-left:6px;font-size:11px;font-weight:700;padding:1px 6px;border-radius:2px;white-space:nowrap}
 .rev-tag.cur{background:var(--ai);color:#fff}.rev-tag.fut{background:#FBF0DC;color:var(--warn)}
+.rev-tbl td.rev-st{text-align:center;vertical-align:middle;padding:4px}
 </style>
 
 
@@ -1091,7 +1092,7 @@ img.rail-mark.qms-icon{background:transparent;object-fit:contain;padding:0}
 <div class="busy" id="busy" hidden><span>処理中…</span></div>
 
 <script>
-window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.26.1" };
+window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.26.2" };
 var qmsToken = null, qmsStarted = false;
 // IDトークンの中身はUTF-8（表示用だけに使う。だれかの判定はGAS側でトークンを確かめて得たメールだけを使う）
 function qmsDecode_(str){
@@ -1197,7 +1198,7 @@ async function showRevisions(no) {
   bg.querySelector('.rev-sub').textContent = '管理番号 ' + d.form.code + '　（帳票マスタ「改訂履歴（様式の承認）」より）';
   bg.querySelector('tbody').innerHTML = d.rows.length ? d.rows.slice().reverse().map(r => {
     const future = r.applied && r.applied > d.today, isCur = r === cur;
-    return '<tr class="' + (isCur ? 'cur' : '') + '"><td class="mono"><b>' + esc(r.ver || '') + '</b>' + (isCur ? '<span class="rev-tag cur">いまの版</span>' : future ? '<span class="rev-tag fut">' + (+r.applied.slice(5, 7)) + '/' + (+r.applied.slice(8, 10)) + 'から</span>' : '') + '</td><td>' + esc(r.date || '') + '</td><td>' + esc(r.what || '') + '</td><td>' + esc(r.applied || '') + '</td><td>' + esc(r.approver || '') + '</td><td>' + esc(r.checker || '') + '</td><td>' + esc(r.maker || '') + '</td></tr>';
+    return '<tr class="' + (isCur ? 'cur' : '') + '"><td class="mono"><b>' + esc(r.ver || '') + '</b>' + (isCur ? '<span class="rev-tag cur">いまの版</span>' : future ? '<span class="rev-tag fut">' + (+r.applied.slice(5, 7)) + '/' + (+r.applied.slice(8, 10)) + 'から</span>' : '') + '</td><td>' + esc(r.date || '') + '</td><td>' + esc(r.what || '') + '</td><td>' + esc(r.applied || '') + '</td>' + [[r.sApprover, r.approver], [r.sChecker, r.checker], [r.sMaker, r.maker]].map(([st, nm]) => '<td class="rev-st">' + (st ? dateStamp(st.info, st.date, 46) : esc(nm || '')) + '</td>').join('') + '</tr>';
   }).join('') : '<tr><td colspan="7" class="empty">改訂履歴はまだありません</td></tr>';
   const done = () => { document.removeEventListener('keydown', key); bg.remove(); };
   const key = e => { if (e.key === 'Escape') done(); };
