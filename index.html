@@ -1081,7 +1081,7 @@ img.rail-mark.qms-icon{background:transparent;object-fit:contain;padding:0}
 <div class="busy" id="busy" hidden><span>処理中…</span></div>
 
 <script>
-window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.25.2" };
+window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.25.3" };
 var qmsToken = null, qmsStarted = false;
 // IDトークンの中身はUTF-8（表示用だけに使う。だれかの判定はGAS側でトークンを確かめて得たメールだけを使う）
 function qmsDecode_(str){
@@ -3570,6 +3570,8 @@ function wirePmBanner(root) {
 async function openPm(machineNo, fy, recordId) {
   let d;
   try { d = await run('getPm', machineNo || '', fy || '', recordId || '', S.asEmail); } catch (e) { return; }
+  // 担当（予定表の担当）でなければ記入画面を開かない（v0.25.3）
+  if (d.notMine) { toast(d.machine.label + ' の12ヶ月設備点検を記入できるのは、担当の ' + (d.person || '（担当なし）') + ' さんです', true); if (d.recordId) openDetail(d.recordId, 'home'); return; }
   if (d.recordId && !d.canEdit) { openDetail(d.recordId, 'home'); return; }
   d.data.marks = d.data.marks || {}; d.data.nums = d.data.nums || {}; d.data.notes = d.data.notes || {};
   S.pm = d;
