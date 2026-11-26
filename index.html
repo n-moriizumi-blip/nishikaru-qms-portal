@@ -1092,7 +1092,7 @@ img.rail-mark.qms-icon{background:transparent;object-fit:contain;padding:0}
 <div class="busy" id="busy" hidden><span>処理中…</span></div>
 
 <script>
-window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.26.3" };
+window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.26.4" };
 var qmsToken = null, qmsStarted = false;
 // IDトークンの中身はUTF-8（表示用だけに使う。だれかの判定はGAS側でトークンを確かめて得たメールだけを使う）
 function qmsDecode_(str){
@@ -2140,7 +2140,8 @@ function doMark(it) { return (it.options || []).filter(o => o && o !== '／')[0]
 function isNumItem(it) { return /数値/.test(it.kind); }
 function rangeOf(it) {
   const lo = it.min !== '' && it.min != null ? Number(it.min) : null, hi = it.max !== '' && it.max != null ? Number(it.max) : null;
-  const f = v => (Math.round(v * 10) / 10).toFixed(1);
+  // 小数点以下は帳票マスタの値のけた数のまま（最低1けた。16→16.0、0.45→0.45）。v0.26.4 までは1けたに丸めて 0.45→0.5 と出ていた
+  const f = v => v.toFixed(Math.min(4, Math.max(1, (String(v).split('.')[1] || '').length)));
   const text = lo !== null && hi !== null ? f(lo) + '〜' + f(hi) + ' ' + it.unit : lo !== null ? f(lo) + ' ' + it.unit + ' 以上' : hi !== null ? f(hi) + ' ' + it.unit + ' 以下' : '';
   return { lo: lo, hi: hi, has: lo !== null || hi !== null, text: text };
 }
