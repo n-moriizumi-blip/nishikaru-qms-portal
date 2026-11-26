@@ -1092,7 +1092,7 @@ img.rail-mark.qms-icon{background:transparent;object-fit:contain;padding:0}
 <div class="busy" id="busy" hidden><span>処理中…</span></div>
 
 <script>
-window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.26.4" };
+window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.26.5" };
 var qmsToken = null, qmsStarted = false;
 // IDトークンの中身はUTF-8（表示用だけに使う。だれかの判定はGAS側でトークンを確かめて得たメールだけを使う）
 function qmsDecode_(str){
@@ -2680,18 +2680,36 @@ function openRecords() {
     '<label for="fFrom">期間（から）<input id="fFrom" type="month" value="' + from + '"></label>' +
     '<label for="fTo">期間（まで）<input id="fTo" type="month" value="' + ym + '"></label>' +
     '<label for="fState">状態<select id="fState"><option value="">すべて</option><option value="done">承認済み</option><option value="wait">記入中・確認待ち・承認待ち</option><option value="back">差し戻し</option></select></label>' +
+    '<label for="fTarget">対象<select id="fTarget"><option value="">すべて</option></select></label>' +
+    '<label for="fMaker">作成者<select id="fMaker"><option value="">すべて</option></select></label>' +
     '<label for="fText">言葉で探す<input id="fText" type="search" placeholder="機番・テーマ・名前"></label>' +
     '<button class="btn primary" id="fGo">探す</button></div>' +
     '<div class="tbl-wrap"><table class="rec"><thead><tr><th>帳票</th><th>対象</th><th>期間・日付</th><th>作成</th><th>状態</th><th></th></tr></thead><tbody id="recBody"></tbody></table></div>' +
     '<p class="empty" style="font-size:13px">紙で保管している過去の記録は、帳票マスタに保管場所を登録していく予定です。</p>';
+  S.recOpts = null; // 開くたびに選択肢を作り直す
   $('#fGo').addEventListener('click', searchNow);
+  // 帳票を選び直したら、対象の選択肢をその帳票の分だけに（v0.26.5）
+  $('#fForm').addEventListener('change', () => { fillRecOptions(); searchNow(); });
+  ['fTarget', 'fMaker', 'fState'].forEach(id => $('#' + id).addEventListener('change', searchNow));
   go('records');
   searchNow();
 }
+// 対象・作成者の選択肢（searchRecords が返す一覧から。選んでいたものは残す）
+function fillRecOptions() {
+  const o = S.recOpts; if (!o) return;
+  const fno = $('#fForm').value;
+  const fill = (sel, vals) => { const cur = sel.value; sel.innerHTML = '<option value="">すべて</option>' + vals.map(v => '<option' + (v === cur ? ' selected' : '') + '>' + esc(v) + '</option>').join(''); if (cur && vals.indexOf(cur) < 0) sel.value = ''; };
+  fill($('#fTarget'), [...new Set(o.targets.filter(t => !fno || t.formNo === Number(fno)).map(t => t.label))]);
+  fill($('#fMaker'), o.makers);
+}
 async function searchNow() {
-  const filter = { formNo: $('#fForm').value, from: $('#fFrom').value, to: $('#fTo').value, state: $('#fState').value, text: $('#fText').value };
-  let list;
-  try { list = await run('searchRecords', filter, S.asEmail); } catch (e) { return; }
+  const filter = { formNo: $('#fForm').value, from: $('#fFrom').value, to: $('#fTo').value, state: $('#fState').value, target: $('#fTarget').value, maker: $('#fMaker').value, text: $('#fText').value };
+  let res;
+  try { res = await run('searchRecords', filter, S.asEmail); } catch (e) { return; }
+  const list = res.list;
+  const first = !S.recOpts;
+  S.recOpts = { targets: res.targets, makers: res.makers };
+  if (first) fillRecOptions();
   $('#recBody').innerHTML = list.length ? list.map(r => '<tr><td>' + esc(r.formName) + '</td><td>' + esc(r.target) + '</td><td class="mono">' + esc(r.period) + '</td><td>' + esc(r.maker) + '</td><td><span class="st ' + r.stateKind + '">' + esc(r.state) + '</span></td><td><button class="linkbtn" data-open="' + esc(r.recordId) + '">開く</button>' + (r.pdfId ? '　<a class="linkbtn" href="https://drive.google.com/file/d/' + encodeURIComponent(r.pdfId) + '/view" target="_blank" rel="noopener">PDF ↗</a>' : '') + '</td></tr>').join('')
     : '<tr><td colspan="6" class="empty">条件に合う記録はありません</td></tr>';
   $('#recBody').querySelectorAll('[data-open]').forEach(b => b.addEventListener('click', () => openDetail(b.dataset.open, 'records')));
