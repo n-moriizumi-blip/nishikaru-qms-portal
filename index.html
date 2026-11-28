@@ -1092,7 +1092,7 @@ img.rail-mark.qms-icon{background:transparent;object-fit:contain;padding:0}
 <div class="busy" id="busy" hidden><span>処理中…</span></div>
 
 <script>
-window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.26.5" };
+window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.26.6" };
 var qmsToken = null, qmsStarted = false;
 // IDトークンの中身はUTF-8（表示用だけに使う。だれかの判定はGAS側でトークンを確かめて得たメールだけを使う）
 function qmsDecode_(str){
@@ -1250,7 +1250,7 @@ function ask(msg, okLabel) {
 }
 function jpDate(s) {
   const d = new Date(s + 'T00:00:00');
-  return d.getFullYear() + '年' + String(d.getMonth() + 1).padStart(2, '0') + '月' + String(d.getDate()).padStart(2, '0') + '日（' + WD[d.getDay()] + '）';
+  return d.getFullYear() + '/' + String(d.getMonth() + 1).padStart(2, '0') + '/' + String(d.getDate()).padStart(2, '0') + '（' + WD[d.getDay()] + '）';
 }
 // 会社カレンダーの出勤日か（サーバーから受け取った休みの日で判定。受け取れないときは土日だけ休み）
 function isWorkday(s) {
@@ -1258,11 +1258,12 @@ function isWorkday(s) {
   if (off) return off.indexOf(s) < 0;
   const w = new Date(s + 'T00:00:00').getDay(); return w !== 0 && w !== 6;
 }
-// 画面に出る日付「2026-11-07」「2026-11」を「2026年11月07日」「2026年11月」に直す（入力欄の中身は変えない）
+// 画面に出る日付「2026-11-07」を「2026/11/07」、年月だけの「2026-11」は「2026年11月」に直す（入力欄の中身は変えない）
+// v0.26.6 で年月日を「2026年11月07日」→「2026/11/07」に（ユーザー指示。年月だけ・年のない月日・日付印はそのまま）
 const DATE_RE = /(?<!\d)(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2})(?::\d{2})?)?(?!\d)/g;
 const YM_RE = /(?<!\d)(\d{4})-(\d{2})(?![\d-])/g;
 function fmtDates(t) {
-  return t.replace(DATE_RE, (m, y, mo, d, h, mi) => y + '年' + mo + '月' + d + '日' + (h ? ' ' + h + ':' + mi : '')).replace(YM_RE, '$1年$2月');
+  return t.replace(DATE_RE, (m, y, mo, d, h, mi) => y + '/' + mo + '/' + d + (h ? ' ' + h + ':' + mi : '')).replace(YM_RE, '$1年$2月');
 }
 function fmtDateNodes(root) {
   const skip = { TEXTAREA: 1, SCRIPT: 1, STYLE: 1 };
