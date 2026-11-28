@@ -1092,7 +1092,7 @@ img.rail-mark.qms-icon{background:transparent;object-fit:contain;padding:0}
 <div class="busy" id="busy" hidden><span>処理中…</span></div>
 
 <script>
-window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.27.1" };
+window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.27.2" };
 var qmsToken = null, qmsStarted = false;
 // IDトークンの中身はUTF-8（表示用だけに使う。だれかの判定はGAS側でトークンを確かめて得たメールだけを使う）
 function qmsDecode_(str){
@@ -3896,7 +3896,7 @@ function renderMine() {
   const band = (title, sub, body) => '<div class="mn-band"><h2>' + title + '<small>' + sub + '</small></h2><div class="mn-list">' + body + '</div></div>';
   const chip = (cls, t) => '<span class="mn-chip ' + cls + '">' + esc(t) + '</span>';
   const md = s => s ? (+s.slice(5, 7)) + '月' + (+s.slice(8, 10)) + '日' : '';
-  const any = d.daily.length || d.monthly.length || d.yearly.length || d.drafts.length || d.roles.length || (d.zesei || []).length;
+  const any = d.daily.length || d.monthly.length || d.yearly.length || d.drafts.length || d.roles.length || (d.zesei || []).length || (d.zeseiDept || []).length;
   let h = '<div class="eyebrow">マイタスク</div><h1>' + esc(d.me) + ' さんの担当</h1><p class="hint">' + (+d.ym.slice(0, 4)) + '年' + (+d.ym.slice(5)) + '月 ・ 担当している点検と、確認・承認の役目。押すと記入画面や記録が開きます</p>';
   if (!any) {
     v.innerHTML = h + '<div class="mn-empty">点検や確認の担当はありません。記入するときは「帳票一覧」から帳票を選んでください。<br><button type="button" class="btn" id="mnForms" style="margin-top:12px">帳票一覧へ</button></div>';
@@ -3939,6 +3939,11 @@ function renderMine() {
     (x.ck ? chip('wait', '要確認 ' + x.ck) : chip(x.done ? 'ok' : 'plan', x.done ? '完了' : x.next ? '次：' + x.next : '進行中')) +
     '<button type="button" class="btn sm' + (x.ck || (x.next && x.next === d.me) ? ' primary' : '') + '" data-zs="' + esc(x.recordId) + '">開く</button></div>').join('') +
     '<div class="mn-foot"><button type="button" class="btn sm" id="mnZs">是正・対策要求書の一覧</button></div></div>');
+  // 自分の課の是正（v0.27.2）：宛先が自分の課の要求書を全部（見るだけ。処置の予定日が近い・過ぎたものは色）
+  if ((d.zeseiDept || []).length) h += band('自分の課の是正', '宛先が自分の課の是正・対策要求書', '<div class="mn-card">' + d.zeseiDept.map(x =>
+    '<div class="mn-row"><span><b>' + esc(x.no) + '　' + esc(x.kind) + '　' + esc((x.req || '').slice(0, 30)) + '</b><small>' + esc(x.stage) + (x.next ? ' ・ 次：' + esc(x.next) : '') + (x.acts ? ' ・ 処置 ' + x.actsDone + '/' + x.acts + ' 済' : '') + (x.nextPlan ? ' ・ 次の予定日 ' + esc(x.nextPlan) : '') + '</small></span>' +
+    (x.late ? chip('todo', '予定日を過ぎた ' + x.late) : x.soon ? chip('wait', '予定日が近い ' + x.soon) : chip('plan', '進行中')) +
+    '<button type="button" class="btn sm" data-zs="' + esc(x.recordId) + '">見る</button></div>').join('') + '</div>');
   // 確認・承認の役目
   if (d.roles.length) h += band('確認・承認', '管理監督者・社長の役目', '<div class="mn-card">' + d.roles.map((x, i) => {
     const n = x.nConfirm + x.nApprove;
