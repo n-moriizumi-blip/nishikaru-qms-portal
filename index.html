@@ -1092,7 +1092,7 @@ img.rail-mark.qms-icon{background:transparent;object-fit:contain;padding:0}
 <div class="busy" id="busy" hidden><span>処理中…</span></div>
 
 <script>
-window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.27.0" };
+window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.27.1" };
 var qmsToken = null, qmsStarted = false;
 // IDトークンの中身はUTF-8（表示用だけに使う。だれかの判定はGAS側でトークンを確かめて得たメールだけを使う）
 function qmsDecode_(str){
@@ -4001,7 +4001,12 @@ function renderMine() {
 .zs-band b{font-size:15px} .zs-band .bw{font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:1px 8px;border-radius:999px}
 .zs-band small{margin-left:auto;font-size:12px;opacity:.92}
 .zs-band.b1{background:var(--ai)} .zs-band.b2{background:var(--ok)} .zs-band.b3{background:var(--shu)}
-.zs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.zs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));border-top:1px solid var(--line)}
+/* No.・宛先などの短い欄は、1つずつの枠（上に欄の名前、下に中身）にして区切りをはっきりさせる（v0.27.1） */
+.zs-grid .zs-f{grid-template-columns:minmax(0,1fr);gap:2px;border-top:0;border-right:1px solid var(--line);border-bottom:1px solid var(--line);padding:8px 14px 10px}
+.zs-grid .zs-f>label,.zs-grid .zs-f>span.l{padding-top:0;font-size:11px;letter-spacing:.04em;color:var(--ai)}
+.zs-grid .zs-f .v{font-size:15px;font-weight:700;padding:2px 0}
+.zs-grid+.zs-f{border-top:0}
 .zs-f{display:grid;grid-template-columns:150px minmax(0,1fr);gap:10px;padding:9px 16px;border-top:1px solid var(--line);align-items:start}
 .zs-f>label,.zs-f>span.l{font-size:12px;color:var(--muted);font-weight:700;padding-top:7px}
 .zs-f .v{font-size:14px;line-height:1.65;padding:5px 2px;white-space:pre-wrap;overflow-wrap:anywhere}
