@@ -1092,7 +1092,7 @@ img.rail-mark.qms-icon{background:transparent;object-fit:contain;padding:0}
 <div class="busy" id="busy" hidden><span>処理中…</span></div>
 
 <script>
-window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.27.6" };
+window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.27.7" };
 var qmsToken = null, qmsStarted = false;
 // IDトークンの中身はUTF-8（表示用だけに使う。だれかの判定はGAS側でトークンを確かめて得たメールだけを使う）
 function qmsDecode_(str){
@@ -4042,11 +4042,15 @@ function renderMine() {
 .zs-done{font-size:12px;font-weight:700;color:var(--ok);background:var(--ok-soft);padding:1px 8px;border-radius:999px;white-space:nowrap}
 .zs-del{border:0;background:none;cursor:pointer;opacity:.55;font-size:15px}
 .zs-del:hover{opacity:1}
-.zs-stamps{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px;padding:10px 16px;border-top:1px solid var(--line);background:var(--paper)}
-.zs-st{display:grid;justify-items:center;gap:3px;font-size:11px;color:var(--muted);min-width:56px}
-.zs-st .empty{width:52px;height:52px;border:1.5px dashed var(--line);border-radius:50%}
-.zs-st .nm{font-size:10px;color:var(--muted)}
-.zs-acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-left:auto}
+.zs-stamps{display:grid;gap:12px;padding:20px 16px 16px;border-top:1px solid var(--line);background:var(--paper)}
+.zs-stamp-set{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:20px 48px}
+.zs-st{display:grid;justify-items:center;gap:6px;color:var(--muted);min-width:90px}
+.zs-st .empty{width:84px;height:84px;border:1.5px dashed var(--line);border-radius:50%}
+.zs-st.next .empty{border:2px solid var(--shu);background:var(--shu-soft)}
+.zs-st .role{font-size:13px;font-weight:700;color:var(--ink);letter-spacing:.08em}
+.zs-st.next .role{color:var(--shu)}
+.zs-st .nm{font-size:12px;color:var(--muted)}
+.zs-acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:flex-end;border-top:1px dashed var(--line);padding-top:12px}
 .zs-clb{border:1px solid var(--ai);background:var(--ai-soft);color:var(--ai);border-radius:3px;padding:0 7px;font-size:12px;cursor:pointer;font-weight:700}
 .zs-note{margin:0;padding:10px 16px;background:var(--warn-soft);border-top:1px solid var(--warn);font-size:13px}
 .zs-cl{display:grid;gap:10px;max-width:640px;width:100%;max-height:86vh;overflow:auto;text-align:left}
@@ -4135,9 +4139,10 @@ async function zsRefreshQuiet() {
 }
 document.addEventListener('visibilitychange', () => { if (!document.hidden) zsRefreshQuiet(); });
 
-function zsStampHtml(s) {
-  return '<div class="zs-st">' + (s.name ? (s.info ? dateStamp(s.info, String(s.date || '').replace(/-/g, '.'), 52) : '<div class="empty" style="border-style:solid;border-color:var(--shu);color:var(--shu);display:grid;place-items:center;font-size:10px">' + esc(s.name) + '</div>') : '<div class="empty"></div>') +
-    '<span>' + esc(s.role) + '</span>' + (s.name && !s.info ? '' : s.name ? '' : '<span class="nm">' + esc(zsWho(s.role)) + '</span>') + '</div>';
+// 日付印は区切りの真ん中に大きめ（84px）に並べ、下に役と氏名（v0.27.7、ユーザー指示）
+function zsStampHtml(s, isNext) {
+  return '<div class="zs-st' + (isNext ? ' next' : '') + '">' + (s.name ? (s.info ? dateStamp(s.info, String(s.date || '').replace(/-/g, '.'), 84) : '<div class="empty" style="border-style:solid;border-color:var(--shu);color:var(--shu);display:grid;place-items:center;font-size:12px">' + esc(s.name) + '</div>') : '<div class="empty"></div>') +
+    '<span class="role">' + esc(s.role) + '</span><span class="nm">' + esc(s.name || zsWho(s.role) || '') + '</span></div>';
 }
 function zsWho(role) {
   const h = S.zs.head;
@@ -4215,7 +4220,8 @@ function zsStampRow(sec) {
     const first = !st.started;
     btns = '<div class="zs-acts">' + (v.canReturn ? '<button class="btn" data-zsret="1">差し戻す</button>' : '') + '<button class="btn primary" data-zsstamp="1">' + (first ? (sec === '発行' ? '発行する（印を押す）' : '提出する（印を押す）') : '確認して印を押す（' + esc(v.stampable.role) + '）') + '</button></div>';
   }
-  return '<div class="zs-stamps">' + v.stamps[sec].map(zsStampHtml).join('') + btns + '</div>';
+  const nextHere = !st.done && st.sec === sec;
+  return '<div class="zs-stamps"><div class="zs-stamp-set">' + v.stamps[sec].map(s => zsStampHtml(s, nextHere && s.role === st.next)).join('') + '</div>' + btns + '</div>';
 }
 function zsActBlock(k, rows, ed, own) {
   let h = '<div class="zs-act"><div class="ah"><span class="zs-k ' + k + '">' + (k === '水平' ? '水平展開' : k) + '</span>' + ZS_ACT[k] + '</div>';
