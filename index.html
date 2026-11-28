@@ -1092,7 +1092,7 @@ img.rail-mark.qms-icon{background:transparent;object-fit:contain;padding:0}
 <div class="busy" id="busy" hidden><span>処理中…</span></div>
 
 <script>
-window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.26.8" };
+window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.27.0" };
 var qmsToken = null, qmsStarted = false;
 // IDトークンの中身はUTF-8（表示用だけに使う。だれかの判定はGAS側でトークンを確かめて得たメールだけを使う）
 function qmsDecode_(str){
@@ -1317,6 +1317,7 @@ function toggleRail() { document.querySelector('.rail').classList.toggle('pinned
 function go(v) {
   S.view = v;
   document.querySelectorAll('main>section').forEach(s => { s.hidden = s.id !== 'v-' + v; });
+  if (v !== 'detail') clearInterval(S.zsTimer); // 是正・対策要求書の読み直しを止める
   const navKey = v === 'detail' ? (S.back === 'bulk' ? 'approve' : S.back) : v === 'bulk' ? 'approve' : v === 'ledger' ? 'forms' : v;
   document.querySelectorAll('.nav').forEach(n => n.dataset.go === navKey ? n.setAttribute('aria-current', 'page') : n.removeAttribute('aria-current'));
   window.scrollTo(0, 0);
@@ -1372,7 +1373,7 @@ function renderTop() {
   const banner = $('#asBanner');
   banner.hidden = !S.asEmail;
   banner.textContent = S.asEmail ? '試験用：いま「' + b.me.name + '」さんとして操作しています。記入・押印はこの人の名前で記録されます（実際に操作した人のメールも記録されます）。' : '';
-  const n = b.todos.filter(t => t.kind === 'approve' || t.kind === 'confirm').length + b.todos.filter(t => /^bulk/.test(t.kind)).reduce((s, t) => s + (t.count || 1), 0);
+  const n = b.todos.filter(t => /^(approve|confirm|zeseiC|zeseiA)$/.test(t.kind)).length + b.todos.filter(t => /^bulk/.test(t.kind)).reduce((s, t) => s + (t.count || 1), 0);
   $('#apBadge').hidden = !n; $('#apBadge').textContent = n;
 }
 
@@ -1381,9 +1382,9 @@ function renderHome() {
   const b = S.boot; if (!b) return;
   const todos = b.todos;
   // 列の振り分け：記入（記入・改善計画書・差し戻し）／確認（日ごとの確認・記録の確認・参加者の押印）／承認
-  const colOf = t => /^(entry|entryMulti|kaizen|ijou|returned)$/.test(t.kind) ? 'entry' : /^(confirm|bulkConfirm|participate|detail)$/.test(t.kind) ? 'check' : 'approve';
-  const TAG = { entryMulti: ['e', '記入'], entry: ['e', '記入'], kaizen: ['e', '記入'], ijou: ['e', '記入'], detail: ['c', '記入'], ijouYear: ['c', '承認'], pmPlan: ['c', '承認'], returned: ['b', '差し戻し'], confirm: ['c', '確認'], bulkConfirm: ['c', '確認'], participate: ['c', '押印'], approve: ['c', '承認'], bulkApprove: ['c', '承認'] };
-  const BTN = { entryMulti: 'まとめて記入', entry: '記入する', kaizen: '記入する', ijou: '記入する', detail: '入れる', ijouYear: '台帳を見る', pmPlan: '予定表へ', returned: '直す', confirm: '確認へ', bulkConfirm: 'まとめて確認へ', participate: '押印へ', approve: '承認へ', bulkApprove: 'まとめて承認へ' };
+  const colOf = t => /^(entry|entryMulti|kaizen|ijou|returned|zesei)$/.test(t.kind) ? 'entry' : /^(confirm|bulkConfirm|participate|detail|zeseiC)$/.test(t.kind) ? 'check' : 'approve';
+  const TAG = { entryMulti: ['e', '記入'], entry: ['e', '記入'], kaizen: ['e', '記入'], ijou: ['e', '記入'], zesei: ['e', '記入'], detail: ['c', '記入'], ijouYear: ['c', '承認'], pmPlan: ['c', '承認'], returned: ['b', '差し戻し'], confirm: ['c', '確認'], zeseiC: ['c', '確認'], bulkConfirm: ['c', '確認'], participate: ['c', '押印'], approve: ['c', '承認'], zeseiA: ['c', '承認'], bulkApprove: ['c', '承認'] };
+  const BTN = { entryMulti: 'まとめて記入', entry: '記入する', kaizen: '記入する', ijou: '記入する', zesei: '開く', detail: '入れる', ijouYear: '台帳を見る', pmPlan: '予定表へ', returned: '直す', confirm: '確認へ', zeseiC: '確認へ', bulkConfirm: 'まとめて確認へ', participate: '押印へ', approve: '承認へ', zeseiA: '承認へ', bulkApprove: 'まとめて承認へ' };
   const list = { entry: [], check: [], approve: [] };
   todos.forEach((t, i) => list[colOf(t)].push(i));
   const nBack = todos.filter(t => t.kind === 'returned').length;
@@ -1467,6 +1468,7 @@ function renderHome() {
     else if (t.kind === 'ijou') openIjou(t.formNo, { recordId: t.recordId });
     else if (t.kind === 'ijouYear') openIjouYear(t.fy);
     else if (t.kind === 'pmPlan') openPmPlan(t.fy);
+    else if (/^zesei/.test(t.kind)) openZesei(t.recordId, 'home');
     else if (t.kind === 'bulkConfirm' || t.kind === 'bulkApprove') openBulk(t.kind === 'bulkConfirm' ? 'confirm' : 'approve', t.formNo);
     else openDetail(t.recordId, 'home');
   }));
@@ -1688,6 +1690,7 @@ function openEntry(formNo, opt) {
   }
   const f = formOf(formNo);
   if (isDailyForm(f)) { if (opt.machineNo || opt.ym) openDaily(formNo, opt.machineNo || '', opt.ym || S.boot.today.slice(0, 7), opt.date); else openMulti(formNo, opt.date); }
+  else if (isZeseiForm(f)) { if (opt.recordId) openZesei(opt.recordId, 'zslist'); else openZeseiList(); }
   else if (isKaizenForm(f)) { if (opt.recordId) openKaizen(formNo, opt.recordId); else openKaizenStart(formNo); }
   else if (isIjouForm(f)) openIjou(formNo, opt);
   else if (isPmForm(f)) { if (opt.machineNo) openPm(opt.machineNo, opt.fy, opt.recordId); else openPmPlan(opt.fy); }
@@ -2766,6 +2769,7 @@ function dayDetailHtml(date) {
     '<div class="dnote"><b>備考</b>　' + (day.note ? esc(day.note) : 'なし') + '</div></div>';
 }
 async function openDetail(recordId, back) {
+  if (/^CAR-/.test(String(recordId))) { openZesei(recordId, back || 'records'); return; } // 是正・対策要求書は専用の画面（v0.27.0）
   S.back = back || 'records';
   let rec, sheet = null;
   try {
@@ -3892,7 +3896,7 @@ function renderMine() {
   const band = (title, sub, body) => '<div class="mn-band"><h2>' + title + '<small>' + sub + '</small></h2><div class="mn-list">' + body + '</div></div>';
   const chip = (cls, t) => '<span class="mn-chip ' + cls + '">' + esc(t) + '</span>';
   const md = s => s ? (+s.slice(5, 7)) + '月' + (+s.slice(8, 10)) + '日' : '';
-  const any = d.daily.length || d.monthly.length || d.yearly.length || d.drafts.length || d.roles.length;
+  const any = d.daily.length || d.monthly.length || d.yearly.length || d.drafts.length || d.roles.length || (d.zesei || []).length;
   let h = '<div class="eyebrow">マイタスク</div><h1>' + esc(d.me) + ' さんの担当</h1><p class="hint">' + (+d.ym.slice(0, 4)) + '年' + (+d.ym.slice(5)) + '月 ・ 担当している点検と、確認・承認の役目。押すと記入画面や記録が開きます</p>';
   if (!any) {
     v.innerHTML = h + '<div class="mn-empty">点検や確認の担当はありません。記入するときは「帳票一覧」から帳票を選んでください。<br><button type="button" class="btn" id="mnForms" style="margin-top:12px">帳票一覧へ</button></div>';
@@ -3929,6 +3933,12 @@ function renderMine() {
   if (d.drafts.length) h += band('書きかけ', '途中保存・差し戻し', '<div class="mn-card">' + d.drafts.map((x, i) =>
     '<div class="mn-row"><span><b>' + esc(x.formName) + '　' + esc(x.target || '') + '</b><small>' + (x.state === '差し戻し' ? '差し戻し：' + esc(x.comment) : esc(fmtAt(x.updatedAt)) + ' 途中保存') + '</small></span>' +
     chip(x.state === '差し戻し' ? 'todo' : 'wait', x.state === '差し戻し' ? '差し戻し' : '書きかけ') + '<button type="button" class="btn sm primary" data-draft="' + i + '">' + (x.state === '差し戻し' ? '直す' : '続きを記入') + '</button></div>').join('') + '</div>');
+  // 是正・対策要求書（v0.27.0）：自分が発行者・対策責任者・対策担当、または次の印の番
+  if ((d.zesei || []).length) h += band('是正・対策要求書', '自分が関わっている要求書', '<div class="mn-card">' + d.zesei.map(x =>
+    '<div class="mn-row"><span><b>' + esc(x.no) + '　' + esc(x.to) + '　' + esc(x.kind) + '</b><small>' + esc(x.stage) + (x.acts ? ' ・ 処置 ' + x.actsDone + '/' + x.acts + ' 済' : '') + (x.due && !x.done ? ' ・ 回答の期限 ' + esc(x.due) : '') + '</small></span>' +
+    (x.ck ? chip('wait', '要確認 ' + x.ck) : chip(x.done ? 'ok' : 'plan', x.done ? '完了' : x.next ? '次：' + x.next : '進行中')) +
+    '<button type="button" class="btn sm' + (x.ck || (x.next && x.next === d.me) ? ' primary' : '') + '" data-zs="' + esc(x.recordId) + '">開く</button></div>').join('') +
+    '<div class="mn-foot"><button type="button" class="btn sm" id="mnZs">是正・対策要求書の一覧</button></div></div>');
   // 確認・承認の役目
   if (d.roles.length) h += band('確認・承認', '管理監督者・社長の役目', '<div class="mn-card">' + d.roles.map((x, i) => {
     const n = x.nConfirm + x.nApprove;
@@ -3945,6 +3955,8 @@ function renderMine() {
   v.querySelectorAll('[data-pm]').forEach(b => b.onclick = () => openPm(b.dataset.pm, d.fy, b.dataset.rid));
   v.querySelectorAll('[data-rec]').forEach(b => b.onclick = () => openDetail(b.dataset.rec, 'entry'));
   const pl = $('#mnPlan'); if (pl) pl.onclick = () => openPmPlan(d.fy);
+  v.querySelectorAll('[data-zs]').forEach(b => b.onclick = () => openZesei(b.dataset.zs, 'entry'));
+  const zl = $('#mnZs'); if (zl) zl.onclick = openZeseiList;
   v.querySelectorAll('[data-draft]').forEach(b => b.onclick = () => {
     const x = d.drafts[+b.dataset.draft];
     if (x.kind === 'kaizen') openKaizen(x.formNo, x.recordId);
@@ -3961,6 +3973,334 @@ function renderMine() {
     else if (x.ijou) openIjouYear();
     else openApprovals();
   });
+}
+</script>
+
+<style>
+/* 是正・対策要求書（v0.27.0）。見本 https://claude.ai/artifact/KjuyD7WCz26NVgtHpL3DEc の③の形 */
+.zs-list{display:grid;gap:8px;margin-top:14px}
+.zs-tools{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;margin:12px 0}
+.zs-tools select{padding:6px 8px;border:1.5px solid var(--line);border-radius:4px;background:var(--surface)}
+.zs-row{display:grid;grid-template-columns:76px minmax(0,1fr) auto auto;gap:6px 14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 14px;cursor:pointer;text-align:left;width:100%;font:inherit;color:inherit}
+.zs-row:hover{border-color:var(--ai)}
+.zs-row .no{font-family:var(--f-mono,monospace);font-weight:700;color:var(--ai);font-size:16px}
+.zs-row b{display:block}
+.zs-row small{color:var(--muted)}
+.zs-pill{font-size:12px;font-weight:700;padding:2px 10px;border-radius:999px;white-space:nowrap;background:var(--ai-soft);color:var(--ai)}
+.zs-pill.done{background:var(--ok-soft);color:var(--ok)} .zs-pill.ck{background:var(--warn-soft);color:var(--warn)}
+.zs-grp{font-size:13px;font-weight:700;color:var(--muted);margin:14px 0 2px}
+.zs-steps{list-style:none;margin:14px 0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.zs-steps li{padding:8px 12px;background:var(--surface);border:1px solid var(--line);border-left:0;display:grid;gap:2px}
+.zs-steps li:first-child{border-left:1px solid var(--line);border-radius:6px 0 0 6px}
+.zs-steps li:last-child{border-radius:0 6px 6px 0}
+.zs-steps b{font-size:13px} .zs-steps small{font-size:11px;color:var(--muted)}
+.zs-steps li.done{background:var(--ok-soft)} .zs-steps li.done b{color:var(--ok)}
+.zs-steps li.cur{background:var(--ai);border-color:var(--ai)} .zs-steps li.cur b,.zs-steps li.cur small{color:#fff}
+.zs-form{background:var(--surface);border:1.5px solid var(--ink,#17212A);border-radius:6px;overflow:hidden}
+.zs-band{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;padding:9px 16px;color:#fff}
+.zs-band b{font-size:15px} .zs-band .bw{font-size:12px;font-weight:700;background:rgba(255,255,255,.22);padding:1px 8px;border-radius:999px}
+.zs-band small{margin-left:auto;font-size:12px;opacity:.92}
+.zs-band.b1{background:var(--ai)} .zs-band.b2{background:var(--ok)} .zs-band.b3{background:var(--shu)}
+.zs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.zs-f{display:grid;grid-template-columns:150px minmax(0,1fr);gap:10px;padding:9px 16px;border-top:1px solid var(--line);align-items:start}
+.zs-f>label,.zs-f>span.l{font-size:12px;color:var(--muted);font-weight:700;padding-top:7px}
+.zs-f .v{font-size:14px;line-height:1.65;padding:5px 2px;white-space:pre-wrap;overflow-wrap:anywhere}
+.zs-f .v.empty{color:var(--muted);font-size:12px}
+.zs-f input,.zs-f textarea,.zs-f select{width:100%;padding:7px 9px;border:1.5px solid var(--ai);border-radius:4px;font:inherit;background:var(--surface)}
+.zs-f textarea{min-height:64px;resize:vertical}
+.zs-f.ck{background:var(--warn-soft)}
+.zs-f.ck input,.zs-f.ck textarea{border:2px dashed var(--warn)}
+.zs-ckbar{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;font-size:12px;color:var(--warn);font-weight:700;margin-top:5px}
+.zs-ckbar span{font-weight:400;color:var(--muted)}
+.zs-saved{font-size:11px;color:var(--muted);margin-top:3px;min-height:14px}
+.zs-act{margin:10px 16px;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.zs-act .ah{display:flex;align-items:center;gap:10px;padding:7px 12px;background:var(--paper);font-weight:700;font-size:13px}
+.zs-k{font-size:11px;padding:1px 8px;border-radius:3px}
+.zs-k.暫定{color:var(--warn);background:var(--warn-soft)} .zs-k.遡及{color:var(--ai);background:var(--ai-soft)} .zs-k.恒久{color:var(--ok);background:var(--ok-soft)} .zs-k.水平{color:var(--muted);background:var(--paper);border:1px solid var(--line)}
+.zs-act .tw{overflow-x:auto}
+.zs-act table{border-collapse:collapse;width:100%;min-width:640px}
+.zs-act th{font-size:11px;color:var(--muted);text-align:left;padding:5px 8px;border-top:1px solid var(--line)}
+.zs-act td{padding:5px 8px;border-top:1px solid var(--line);font-size:13px;vertical-align:top}
+.zs-act td.n{white-space:nowrap}
+.zs-act input,.zs-act textarea{width:100%;padding:5px 7px;font:inherit;font-size:13px;border:1.5px solid var(--ai);border-radius:4px;background:var(--surface)}
+.zs-act textarea{min-height:44px;resize:vertical}
+.zs-act input.need{border:1.5px dashed var(--shu)}
+.zs-act tr.ck td{background:var(--warn-soft)}
+.zs-act tr.ck textarea{border:2px dashed var(--warn)}
+.zs-act .add{padding:6px 10px;border-top:1px solid var(--line)}
+.zs-needtx{font-size:10.5px;color:var(--shu);font-weight:700}
+.zs-done{font-size:12px;font-weight:700;color:var(--ok);background:var(--ok-soft);padding:1px 8px;border-radius:999px;white-space:nowrap}
+.zs-del{border:0;background:none;cursor:pointer;opacity:.55;font-size:15px}
+.zs-del:hover{opacity:1}
+.zs-stamps{display:flex;flex-wrap:wrap;align-items:flex-end;gap:14px;padding:10px 16px;border-top:1px solid var(--line);background:var(--paper)}
+.zs-st{display:grid;justify-items:center;gap:3px;font-size:11px;color:var(--muted);min-width:56px}
+.zs-st .empty{width:52px;height:52px;border:1.5px dashed var(--line);border-radius:50%}
+.zs-st .nm{font-size:10px;color:var(--muted)}
+.zs-acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-left:auto}
+.zs-clb{border:1px solid var(--ai);background:var(--ai-soft);color:var(--ai);border-radius:3px;padding:0 7px;font-size:12px;cursor:pointer;font-weight:700}
+.zs-note{margin:0;padding:10px 16px;background:var(--warn-soft);border-top:1px solid var(--warn);font-size:13px}
+.zs-cl{display:grid;gap:10px;max-width:640px;width:100%;max-height:86vh;overflow:auto;text-align:left}
+.zs-cl .body{background:var(--paper);border-left:3px solid var(--ai);padding:10px 14px;font-size:13.5px;line-height:1.8;white-space:pre-wrap}
+.zs-cl dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;margin:0;font-size:13px}
+.zs-cl dt{color:var(--muted)} .zs-cl dd{margin:0}
+@media (max-width:760px){.zs-steps{grid-template-columns:1fr 1fr}.zs-f{grid-template-columns:minmax(0,1fr)}.zs-row{grid-template-columns:60px minmax(0,1fr)}}
+</style>
+<script>
+/* ================= 是正・対策要求書（No.01、v0.27.0） ================= */
+function isZeseiForm(f) { return !!f && String(f.type).indexOf('⑨') === 0; }
+const ZS_SEC = [
+  { key: '発行', label: '要求書の発行', band: 'b1', title: '1. 要求', who: '監査員（発行者）', press: '印：社長・管責・発行者' },
+  { key: '報告', label: '是正報告', band: 'b2', title: '2. 是正報告', who: '対策担当（課員）→ 対策責任者', press: '印：管責・発行者・対策責任者・対策担当' },
+  { key: '確認', label: '是正処置の確認', band: 'b3', title: '3. 是正処置の確認', who: '監査員 → 山浦 → 社長', press: '印：社長・管責・発行者（処置が済んで7日以内）' },
+  { key: '効果', label: '効果の確認', band: 'b3', title: '4. 効果の確認', who: '監査員 → 山浦 → 社長', press: '印：社長・管責・発行者（基本は3か月後）' }
+];
+const ZS_ACT = { 暫定: '1) 現物・暫定処置', 遡及: '2) 遡及処置', 恒久: '3) 恒久対策（再発防止）', 水平: '4) 水平展開' };
+const zsYmd = s => String(s || '').replace(/^(\d{4})-(\d{2})-(\d{2}).*$/, '$1/$2/$3');
+
+/* ---------- 一覧 ---------- */
+async function openZeseiList() {
+  let d; try { d = await run('getZeseiList', S.asEmail); } catch (e) { return; }
+  S.zsList = d; S.zsFilter = S.zsFilter || { dept: '', open: true };
+  S.back = 'forms'; renderZeseiList(); go('detail');
+}
+function renderZeseiList() {
+  const d = S.zsList, f = S.zsFilter;
+  const rows = d.rows.filter(r => (!f.dept || r.dept === f.dept) && (!f.open || !r.done || r.ck));
+  const groups = {}; rows.forEach(r => (groups[r.audit || '（監査の指定なし）'] = groups[r.audit || '（監査の指定なし）'] || []).push(r));
+  $('#v-detail').innerHTML = '<button class="linkbtn" id="zsBack">← 帳票一覧へもどる</button><div class="eyebrow">内部監査・是正　No.01</div><h1>是正・対策要求書</h1>' +
+    '<div class="zs-tools"><label>部署 <select id="zsDept"><option value="">すべて</option>' + d.depts.map(x => '<option value="' + esc(x.code) + '"' + (f.dept === x.code ? ' selected' : '') + '>' + esc(x.code + ' ' + x.name) + '</option>').join('') + '</select></label>' +
+    '<label><input type="checkbox" id="zsOpen"' + (f.open ? ' checked' : '') + '> 終わっていないものだけ</label><span style="flex:1"></span><button class="btn primary" id="zsNew">＋ 新しい要求書を作る</button></div>' +
+    (rows.length ? Object.keys(groups).map(g => '<div class="zs-grp">' + esc(g) + '（' + groups[g].length + '件）</div><div class="zs-list">' + groups[g].map(r =>
+      '<button class="zs-row" data-zs="' + esc(r.recordId) + '"><span class="no">' + esc(r.no) + '</span><span><b>' + esc(r.to) + '　' + esc(r.kind) + (r.clause ? '　' + esc(r.clause) : '') + '</b><small>' + esc((r.req || '').slice(0, 70)) + '</small></span>' +
+      (r.ck ? '<span class="zs-pill ck">要確認 ' + r.ck + '</span>' : '<span></span>') + '<span class="zs-pill' + (r.done ? ' done' : '') + '">' + esc(r.stage) + '</span></button>').join('') + '</div>').join('')
+      : '<p class="empty">条件に合う要求書はありません</p>');
+  $('#zsBack').onclick = openForms;
+  $('#zsDept').onchange = e => { f.dept = e.target.value; renderZeseiList(); };
+  $('#zsOpen').onchange = e => { f.open = e.target.checked; renderZeseiList(); };
+  $('#zsNew').onclick = zsCreateDialog;
+  $('#v-detail').querySelectorAll('[data-zs]').forEach(b => b.onclick = () => openZesei(b.dataset.zs, 'zslist'));
+}
+// 新しい要求書：No.・宛先・区分・該当条項だけ聞いて作り、あとは画面で書く
+function zsCreateDialog() {
+  const d = S.zsList;
+  const bg = document.createElement('div'); bg.className = 'ask-bg';
+  bg.innerHTML = '<div class="ask" role="dialog" aria-modal="true" style="max-width:520px;width:100%;text-align:left"><h3 style="margin:0 0 10px">新しい是正・対策要求書</h3>' +
+    '<div class="zs-f" style="padding:4px 0;border:0"><label for="zcNo">No.</label><input id="zcNo" placeholder="例：P-7"></div>' +
+    '<div class="zs-f" style="padding:4px 0;border:0"><label for="zcDept">宛先</label><select id="zcDept">' + d.depts.map(x => '<option value="' + esc(x.code) + '">' + esc(x.to) + '</option>').join('') + '</select></div>' +
+    '<div class="zs-f" style="padding:4px 0;border:0"><label for="zcKind">区分</label><select id="zcKind"><option>不適合</option><option>改善の機会</option></select></div>' +
+    '<div class="zs-f" style="padding:4px 0;border:0"><label for="zcCl">該当条項</label><input id="zcCl" placeholder="例：E.3.2 (8.2.3.2)"></div>' +
+    '<div class="zs-f" style="padding:4px 0;border:0"><label for="zcAu">監査</label><input id="zcAu" placeholder="例：2026年度 内部監査（2026年12月）／内部監査以外は内容"></div>' +
+    '<p style="font-size:12px;color:var(--muted)">作った人が発行者（監査員）になります。要求事項などは、作ったあとの画面で書きます。</p>' +
+    '<div class="ask-btns"><button type="button" class="btn" data-a="0">やめる</button><button type="button" class="btn primary" data-a="1">作る</button></div></div>';
+  document.body.appendChild(bg);
+  bg.addEventListener('click', async e => {
+    if (e.target === bg || (e.target.closest('[data-a]') || {}).dataset?.a === '0') { bg.remove(); return; }
+    if ((e.target.closest('[data-a]') || {}).dataset?.a !== '1') return;
+    const p = { no: $('#zcNo').value.trim(), dept: $('#zcDept').value, kind: $('#zcKind').value, clause: $('#zcCl').value.trim(), audit: $('#zcAu').value.trim() };
+    if (!p.no) { toast('No. を入れてください', true); return; }
+    bg.remove();
+    let r; try { r = await run('createZesei', p, S.asEmail); } catch (err) { return; }
+    toast('作りました'); openZesei(r.recordId, 'zslist');
+  });
+}
+
+/* ---------- 1枚 ---------- */
+async function openZesei(recordId, back) {
+  let v; try { v = await run('getZesei', recordId, S.asEmail); } catch (e) { return; }
+  S.zs = v; S.zsBack = back || S.zsBack || 'home';
+  S.back = { zslist: 'forms', records: 'records', entry: 'entry', home: 'home', approve: 'approve' }[S.zsBack] || 'home'; // 左のレールの光る所
+  renderZesei(); go('detail');
+  zsAutoRefresh();
+}
+// 開いている間は30秒ごと・画面に戻ったときに読み直す（入力中は読み直さない）
+function zsAutoRefresh() {
+  clearInterval(S.zsTimer);
+  S.zsTimer = setInterval(zsRefreshQuiet, 30000);
+}
+async function zsRefreshQuiet() {
+  if (S.view !== 'detail' || !S.zs || !$('#zsRoot')) { clearInterval(S.zsTimer); return; }
+  const a = document.activeElement;
+  if (a && $('#zsRoot').contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return;
+  try { S.zs = await api('getZesei', S.zs.recordId, S.asEmail); renderZesei(); } catch (e) { /* 次に */ }
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) zsRefreshQuiet(); });
+
+function zsStampHtml(s) {
+  return '<div class="zs-st">' + (s.name ? (s.info ? dateStamp(s.info, String(s.date || '').replace(/-/g, '.'), 52) : '<div class="empty" style="border-style:solid;border-color:var(--shu);color:var(--shu);display:grid;place-items:center;font-size:10px">' + esc(s.name) + '</div>') : '<div class="empty"></div>') +
+    '<span>' + esc(s.role) + '</span>' + (s.name && !s.info ? '' : s.name ? '' : '<span class="nm">' + esc(zsWho(s.role)) + '</span>') + '</div>';
+}
+function zsWho(role) {
+  const h = S.zs.head;
+  return role === '社長' ? S.zs.roles['社長'] : role === '管責' ? S.zs.roles['管責'] : role === '発行者' ? h['発行者'] : role === '対策責任者' ? h['対策責任者'] : role === '対策担当' ? (h['対策担当'] || '（課の人）') : '';
+}
+// 欄。ed＝書ける、ck＝要確認、area＝複数行
+function zsField(label, key, val, o) {
+  o = o || {};
+  const id = 'zsF_' + key;
+  const ck = !!o.ck;
+  const ed = !!o.ed || (ck && o.own);
+  let ctl;
+  if (!ed) ctl = '<div class="v' + (val ? '' : ' empty') + '">' + (val ? esc(o.date ? zsYmd(val) : val) : '（未記入）') + '</div>';
+  else if (o.select) ctl = '<select id="' + id + '" data-key="' + esc(key) + '">' + o.select.map(x => '<option value="' + esc(x[0]) + '"' + (x[0] === val ? ' selected' : '') + '>' + esc(x[1]) + '</option>').join('') + '</select>';
+  else if (o.area) ctl = '<textarea id="' + id + '" data-key="' + esc(key) + '" rows="3">' + esc(val) + '</textarea>';
+  else ctl = '<input id="' + id + '" data-key="' + esc(key) + '" type="' + (o.date ? 'date' : 'text') + '" value="' + esc(val) + '"' + (o.ph ? ' placeholder="' + esc(o.ph) + '"' : '') + '>';
+  const ckbar = ck ? '<div class="zs-ckbar">紙から読み取った内容です。' + (o.own ? '<button type="button" class="btn sm" data-ckok="' + esc(key) + '">このままで正しい</button><span>違っていれば上の欄を書き換えてください</span>' : '<span>記入した人が確認します</span>') + '</div>' : '';
+  return '<div class="zs-f' + (ck ? ' ck' : '') + '"><label for="' + id + '">' + esc(label) + (o.extra || '') + '</label><div>' + ctl + ckbar + (ed ? '<div class="zs-saved" data-saved="' + esc(key) + '"></div>' : '') + '</div></div>';
+}
+
+function renderZesei() {
+  const v = S.zs, h = v.head, F = k => (v.fields[k] || { v: '' });
+  const st = v.stage;
+  const back = S.zsBack === 'zslist' ? '← 是正・対策要求書の一覧へ' : S.zsBack === 'records' ? '← 記録を探すへもどる' : S.zsBack === 'entry' ? '← マイタスクへもどる' : '← ホームへもどる';
+  const people = [['', '（選ぶ）']].concat(v.people.map(p => [p.name, p.name + (p.dept ? '（' + p.dept + '）' : '')]));
+  let html = '<div id="zsRoot"><button class="linkbtn" id="zsBack">' + back + '</button>' +
+    '<div class="eyebrow">内部監査・是正　No.01　' + esc(h['監査'] || '') + '</div><h1>是正・対策要求書　' + esc(h['No']) + '</h1>' +
+    '<p class="hint">' + esc(st.label) + (st.done ? '' : '　・　次：' + esc(st.next) + '（' + esc(zsWho(st.next)) + '）') + '</p>' +
+    '<ol class="zs-steps">' + ZS_SEC.map((s, i) => '<li class="' + (i < st.idx ? 'done' : i === st.idx ? 'cur' : '') + '"><b>' + (i < st.idx ? '✔ ' : '') + esc(s.label) + '</b><small>' + esc(s.press) + '</small></li>').join('') + '</ol>' +
+    '<div class="zs-form">';
+  // 1. 要求
+  const cR = v.can['発行'], ownR = v.ckOwn['発行'];
+  html += zsBand(ZS_SEC[0], cR);
+  html += '<div class="zs-grid">' +
+    zsField('No.', 'No', h['No'], { ed: cR }) +
+    zsField('宛先', '部署記号', h['部署記号'], { ed: cR, select: v.depts.map(x => [x.code, x.to]) }).replace('<div class="v">' + esc(h['部署記号']) + '</div>', '<div class="v">' + esc(h['宛先']) + '</div>') +
+    zsField('区分', '区分', h['区分'], { ed: cR, select: [['不適合', '不適合'], ['改善の機会', '改善の機会']] }) +
+    zsField('該当条項', '該当条項', h['該当条項'], { ed: cR, extra: h['該当条項'] ? ' <button type="button" class="zs-clb" data-cl="' + esc(h['該当条項']) + '">本文</button>' : '' }) +
+    zsField('発行日', '発行日', h['発行日'], { ed: cR, date: true }) +
+    zsField('回答の期限', '回答期限', h['回答期限'], { ed: cR, date: true }) +
+    zsField('発行者（監査員）', '発行者', h['発行者'], { ed: v.isAdmin, select: v.isAdmin ? people : null }) +
+    zsField('対策責任者', '対策責任者', h['対策責任者'], { ed: v.can.meta, select: people }) +
+    zsField('対策担当', '対策担当', h['対策担当'], { ed: v.can.chief, select: people }) +
+    '</div>' +
+    zsField('1 要求事項', '要求事項', F('要求事項').v, { ed: cR, area: true, ck: F('要求事項').ck, own: ownR }) +
+    zsField('2 不適合又は改善の機会の状態及び客観的証拠', '状態と証拠', F('状態と証拠').v, { ed: cR, area: true, ck: F('状態と証拠').ck, own: ownR });
+  html += zsStampRow('発行');
+  // 2. 是正報告
+  const cP = v.can['報告'], ownP = v.ckOwn['報告'];
+  html += zsBand(ZS_SEC[1], cP);
+  ['なぜ1', 'なぜ2', 'なぜ3', 'なぜ4', '原因'].forEach(k => { html += zsField(k, k, F(k).v, { ed: cP, ck: F(k).ck, own: ownP }); });
+  const actEd = cP || v.can.acts;
+  ['暫定', '遡及', '恒久', '水平'].forEach(k => { html += zsActBlock(k, v.acts.filter(a => a.kind === k), actEd, ownP); });
+  html += zsStampRow('報告');
+  const nCk = Object.keys(v.fields).filter(k => v.fields[k].ck).length + v.acts.filter(a => a.ck).length;
+  if (nCk) html += '<p class="zs-note">⚠ 紙から読み取った内容の<b>要確認が ' + nCk + 'か所</b>あります。記入した人が「このままで正しい」を押すか、書き直すと消えます。</p>';
+  // 3・4. 確認
+  html += zsBand(ZS_SEC[2], v.can['確認']);
+  if (st.sec === '確認' && !st.started && v.acts.some(a => !a.done)) html += '<p class="zs-note">処置がまだ ' + v.acts.filter(a => !a.done).length + '件済んでいません。すべて「実施した」になってから是正処置の確認をします。</p>';
+  html += zsField('是正処置の確認の内容', '確認の内容', F('確認の内容').v, { ed: v.can['確認'], area: true, ck: F('確認の内容').ck, own: v.ckOwn['確認'] });
+  html += zsField('効果の確認の予定時期', '効果の確認の予定時期', h['効果の確認の予定時期'], { ed: v.isAdmin || h['発行者'] === v.me, ph: '例：2027/05/31 ／ 次回内部監査' });
+  html += zsStampRow('確認');
+  html += zsBand(ZS_SEC[3], v.can['効果']);
+  html += zsField('効果の確認の内容', '効果の内容', F('効果の内容').v, { ed: v.can['効果'], area: true, ck: F('効果の内容').ck, own: v.ckOwn['効果'] });
+  html += zsStampRow('効果');
+  html += '</div></div>';
+  $('#v-detail').innerHTML = html;
+  zsWire();
+}
+function zsBand(s, can) { return '<div class="zs-band ' + s.band + '"><b>' + esc(s.title) + '</b><span class="bw">記入：' + esc(s.who) + '</span>' + (can ? '<small>あなたが書く欄です</small>' : '') + '</div>'; }
+function zsStampRow(sec) {
+  const v = S.zs, st = v.stage;
+  let btns = '';
+  if (v.stampable && v.stampable.sec === sec) {
+    const first = !st.started;
+    btns = '<div class="zs-acts">' + (v.canReturn ? '<button class="btn" data-zsret="1">差し戻す</button>' : '') + '<button class="btn primary" data-zsstamp="1">' + (first ? (sec === '発行' ? '発行する（印を押す）' : '提出する（印を押す）') : '確認して印を押す（' + esc(v.stampable.role) + '）') + '</button></div>';
+  }
+  return '<div class="zs-stamps">' + v.stamps[sec].map(zsStampHtml).join('') + btns + '</div>';
+}
+function zsActBlock(k, rows, ed, own) {
+  let h = '<div class="zs-act"><div class="ah"><span class="zs-k ' + k + '">' + (k === '水平' ? '水平展開' : k) + '</span>' + ZS_ACT[k] + '</div>';
+  if (!rows.length && !ed) return h + '<div style="padding:8px 12px;color:var(--muted);font-size:12px">（記入なし）</div></div>';
+  h += '<div class="tw"><table><thead><tr><th style="width:130px">予定日</th><th>内容</th><th style="width:110px">担当</th><th style="width:130px">実施日</th><th>結果</th>' + (ed ? '<th style="width:30px"></th>' : '') + '</tr></thead><tbody>';
+  h += rows.map(a => {
+    const canRow = ed || (a.ck && own);
+    if (!canRow) return '<tr class="' + (a.ck ? 'ck' : '') + '"><td class="n">' + (a.plan ? zsYmd(a.plan) : '<span class="zs-needtx">予定日なし</span>') + '</td><td>' + esc(a.what) + (a.ck ? '<div class="zs-ckbar">紙から読み取った内容です。<span>記入した人が確認します</span></div>' : '') + '</td><td class="n">' + esc(a.who) + '</td><td class="n">' + (a.done ? '<span class="zs-done">' + zsYmd(a.done) + ' 済</span>' : '—') + '</td><td>' + esc(a.result) + '</td></tr>';
+    return '<tr class="' + (a.ck ? 'ck' : '') + '" data-act="' + esc(a.id) + '" data-at="' + esc(a.at) + '">' +
+      '<td class="n"><input type="date" data-af="plan" value="' + esc(a.plan) + '"' + (a.plan || a.done ? '' : ' class="need"') + '>' + (a.plan || a.done ? '' : '<div class="zs-needtx">予定日を入れてください</div>') + '</td>' +
+      '<td><textarea data-af="what" rows="2" placeholder="何をするか">' + esc(a.what) + '</textarea>' + (a.ck ? '<div class="zs-ckbar">紙から読み取った内容です。<button type="button" class="btn sm" data-ckact="' + esc(a.id) + '">このままで正しい</button></div>' : '') + '</td>' +
+      '<td><input type="text" data-af="who" value="' + esc(a.who) + '" placeholder="担当"></td>' +
+      '<td class="n">' + (a.done ? '<input type="date" data-af="done" value="' + esc(a.done) + '">' : '<button class="btn sm" data-actdone="' + esc(a.id) + '">実施した</button>') + '</td>' +
+      '<td><input type="text" data-af="result" value="' + esc(a.result) + '" placeholder="やった結果"></td>' +
+      (ed ? '<td><button class="zs-del" title="この行を消す" aria-label="この行を消す" data-actdel="' + esc(a.id) + '">🗑</button></td>' : '') + '</tr>';
+  }).join('');
+  h += '</tbody></table></div>' + (ed ? '<div class="add"><button class="btn sm" data-actadd="' + k + '">＋ 予定を足す</button></div>' : '') + '</div>';
+  return h;
+}
+
+function zsWire() {
+  const root = $('#zsRoot'), v = S.zs;
+  $('#zsBack').onclick = () => { clearInterval(S.zsTimer); if (S.zsBack === 'zslist') openZeseiList(); else if (S.zsBack === 'records') openRecords(); else if (S.zsBack === 'entry') openMine(); else { boot(true); renderHome(); go('home'); } };
+  // 欄：書き終わったら（欄を離れたら）その欄だけ保存
+  root.querySelectorAll('[data-key]').forEach(el => el.addEventListener('change', () => zsSaveField(el)));
+  root.querySelectorAll('[data-ckok]').forEach(b => b.onclick = async () => { try { S.zs = await run('confirmZeseiCheck', v.recordId, b.dataset.ckok, '', S.asEmail); } catch (e) { return; } toast('確認しました'); renderZesei(); });
+  root.querySelectorAll('[data-ckact]').forEach(b => b.onclick = async () => { try { S.zs = await run('confirmZeseiCheck', v.recordId, '', b.dataset.ckact, S.asEmail); } catch (e) { return; } toast('確認しました'); renderZesei(); });
+  root.querySelectorAll('[data-cl]').forEach(b => b.onclick = () => zsShowClause(b.dataset.cl));
+  // 処置
+  root.querySelectorAll('tr[data-act] [data-af]').forEach(el => el.addEventListener('change', () => {
+    const tr = el.closest('tr'), p = { id: tr.dataset.act, prevAt: tr.dataset.at }; p[el.dataset.af] = el.value;
+    zsSaveAct(p, tr);
+  }));
+  root.querySelectorAll('[data-actdone]').forEach(b => b.onclick = () => zsSaveAct({ id: b.dataset.actdone, prevAt: b.closest('tr').dataset.at, done: S.boot.today }, null, true));
+  root.querySelectorAll('[data-actadd]').forEach(b => b.onclick = () => zsSaveAct({ kind: b.dataset.actadd }, null, true));
+  root.querySelectorAll('[data-actdel]').forEach(b => b.onclick = async () => { if (!(await ask('この処置の行を消しますか？', '消す'))) return; zsSaveAct({ id: b.dataset.actdel, del: true }, null, true); });
+  // 印・差し戻し
+  root.querySelectorAll('[data-zsstamp]').forEach(b => b.onclick = async () => {
+    const first = !v.stage.started;
+    if (!(await ask(first ? 'この内容で' + (v.stage.sec === '発行' ? '発行' : '提出') + 'します。印を押したあとは、差し戻されるまで直せません。' : '内容を確認して印を押します。', '印を押す'))) return;
+    try { S.zs = await run('stampZesei', v.recordId, S.asEmail); } catch (e) { return; }
+    toast('印を押しました'); renderZesei(); boot(true);
+  });
+  root.querySelectorAll('[data-zsret]').forEach(b => b.onclick = async () => {
+    const c = await zsPrompt('差し戻す理由を書いてください（書いた人に届きます）');
+    if (!c) return;
+    try { S.zs = await run('returnZesei', v.recordId, c, S.asEmail); } catch (e) { return; }
+    toast('差し戻しました'); renderZesei(); boot(true);
+  });
+}
+async function zsSaveField(el) {
+  const key = el.dataset.key, f = S.zs.fields[key];
+  const prevAt = f ? f.at : null;
+  const out = el.closest('.zs-f') && el.closest('.zs-f').querySelector('[data-saved]');
+  if (out) out.textContent = '保存中…';
+  let r;
+  try { r = await api('saveZeseiField', S.zs.recordId, key, el.value, prevAt, S.asEmail); }
+  catch (e) { if (out) out.textContent = '保存できませんでした：' + ((e && e.message) || e); toast((e && e.message) || String(e), true); return; }
+  if (r.conflict) {
+    const keepMine = await ask('あなたがこの画面を開いたあとに、' + (r.conflict.by || 'ほかの人') + ' さんがこの欄を直しました。\n\n' + (r.conflict.by || 'ほかの人') + ' さんの内容：\n' + r.conflict.v + '\n\nあなたの内容で上書きしますか？（やめると、' + (r.conflict.by || 'ほかの人') + ' さんの内容を表示します）', 'あなたの内容で上書き');
+    if (keepMine) { try { r = await api('saveZeseiField', S.zs.recordId, key, el.value, r.conflict.at, S.asEmail); } catch (e) { toast((e && e.message) || String(e), true); return; } }
+    else { S.zs = await api('getZesei', S.zs.recordId, S.asEmail); renderZesei(); return; }
+  }
+  if (S.zs.fields[key]) { S.zs.fields[key].at = r.at; S.zs.fields[key].v = el.value; S.zs.fields[key].ck = false; } else S.zs.fields[key] = { v: el.value, at: r.at, ck: false };
+  if (out) out.textContent = '保存しました（' + r.at.slice(11, 16) + '）';
+  if (/^(No|部署記号|区分|該当条項|発行者|対策責任者|対策担当)$/.test(key)) { S.zs = await api('getZesei', S.zs.recordId, S.asEmail); renderZesei(); }
+}
+async function zsSaveAct(p, tr, reload) {
+  let r;
+  try { r = await (reload ? run : api)('saveZeseiAct', S.zs.recordId, p, S.asEmail); } catch (e) { if (!reload) toast((e && e.message) || String(e), true); return; }
+  if (r.conflict) { toast('ほかの人がこの行を直していました。最新の内容を表示します', true); reload = true; }
+  else if (tr) tr.dataset.at = r.at;
+  if (reload || p.what !== undefined) { S.zs = await api('getZesei', S.zs.recordId, S.asEmail); renderZesei(); }
+  else toast('保存しました');
+}
+function zsPrompt(msg) {
+  return new Promise(resolve => {
+    const bg = document.createElement('div'); bg.className = 'ask-bg';
+    bg.innerHTML = '<div class="ask" role="dialog" aria-modal="true" style="max-width:480px;width:100%"><p></p><textarea id="zsPr" rows="4" style="width:100%;padding:8px;font:inherit;border:1.5px solid var(--ai);border-radius:4px"></textarea><div class="ask-btns"><button type="button" class="btn" data-a="0">やめる</button><button type="button" class="btn primary" data-a="1">差し戻す</button></div></div>';
+    bg.querySelector('p').textContent = msg;
+    const done = v => { bg.remove(); resolve(v); };
+    bg.addEventListener('click', e => { if (e.target === bg) done(''); const b = e.target.closest('[data-a]'); if (b) done(b.dataset.a === '1' ? bg.querySelector('#zsPr').value.trim() : ''); });
+    document.body.appendChild(bg); bg.querySelector('#zsPr').focus();
+  });
+}
+// 条項の本文（品質マニュアル）
+async function zsShowClause(key) {
+  let c = S.zs && S.zs.clause && String(key).indexOf(S.zs.clause.key) === 0 ? S.zs.clause : null;
+  if (!c) { try { c = await run('getClause', key); } catch (e) { return; } }
+  if (!c) { toast('品質マニュアルにその条項が見つかりません（' + esc(key) + '）', true); return; }
+  const bg = document.createElement('div'); bg.className = 'ask-bg';
+  bg.innerHTML = '<div class="ask zs-cl" role="dialog" aria-modal="true"><div style="display:flex;justify-content:space-between;gap:10px"><div><small style="color:var(--muted)">品質マニュアル ' + esc(c.ver || '') + ' ・ ' + esc(c.page) + '頁</small><h3 style="margin:4px 0 0">' + esc(c.key + '　' + c.title) + '</h3></div><button class="btn sm" data-a="0">閉じる</button></div>' +
+    '<dl><dt>主管</dt><dd>' + esc(c.owner) + '</dd><dt>該当標準</dt><dd>' + esc(c.std) + '</dd><dt>ISO 9001</dt><dd>' + esc(c.iso) + '</dd>' + (c.rec ? '<dt>記録・帳票</dt><dd>' + esc(c.rec) + '</dd>' : '') + '</dl><div class="body">' + esc(c.body) + '</div></div>';
+  bg.addEventListener('click', e => { if (e.target === bg || e.target.closest('[data-a]')) bg.remove(); });
+  document.body.appendChild(bg);
 }
 </script>
 
