@@ -1092,7 +1092,7 @@ img.rail-mark.qms-icon{background:transparent;object-fit:contain;padding:0}
 <div class="busy" id="busy" hidden><span>処理中…</span></div>
 
 <script>
-window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.27.5" };
+window.QMS = { name: "QMSポータル", api: "https://script.google.com/macros/s/AKfycbxl1rT-XDQHxkfbQI_5LO6nSzkWERm3fUMTI5WYhyyOHupOwlXWo0NY9ffD2YKz8Oadzg/exec", version: "0.27.6" };
 var qmsToken = null, qmsStarted = false;
 // IDトークンの中身はUTF-8（表示用だけに使う。だれかの判定はGAS側でトークンを確かめて得たメールだけを使う）
 function qmsDecode_(str){
@@ -4221,6 +4221,8 @@ function zsActBlock(k, rows, ed, own) {
   let h = '<div class="zs-act"><div class="ah"><span class="zs-k ' + k + '">' + (k === '水平' ? '水平展開' : k) + '</span>' + ZS_ACT[k] + '</div>';
   if (!rows.length && !ed) return h + '<div style="padding:8px 12px;color:var(--muted);font-size:12px">（記入なし）</div></div>';
   h += '<div class="tw"><table><thead><tr><th style="width:130px">予定日</th><th>内容</th><th style="width:110px">担当</th><th style="width:130px">実施日</th><th>結果</th>' + (ed ? '<th style="width:30px"></th>' : '') + '</tr></thead><tbody>';
+  // 予定日の古い順（新しいものが下）。予定日のない行はいちばん下、同じ日は足した順（v0.27.6）
+  rows = rows.slice().sort((a, b) => (a.plan ? 0 : 1) - (b.plan ? 0 : 1) || String(a.plan || '').localeCompare(String(b.plan || '')) || (a.order || 0) - (b.order || 0));
   h += rows.map(a => {
     const canRow = ed || (a.ck && own);
     if (!canRow) return '<tr class="' + (a.ck ? 'ck' : '') + '"><td class="n">' + (a.plan ? zsYmd(a.plan) : '<span class="zs-needtx">予定日なし</span>') + '</td><td>' + esc(a.what) + (a.ck ? '<div class="zs-ckbar">紙から読み取った内容です。<span>記入した人が確認します</span></div>' : '') + '</td><td class="n">' + esc(a.who) + '</td><td class="n">' + (a.done ? '<span class="zs-done">' + zsYmd(a.done) + ' 済</span>' : '—') + '</td><td>' + esc(a.result) + '</td></tr>';
